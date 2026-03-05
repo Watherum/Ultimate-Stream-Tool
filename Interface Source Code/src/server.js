@@ -24,6 +24,7 @@ if (isDev) {
 const mainPath = path.resolve(baseDir, 'Resources', 'Texts');
 const guiPath = __dirname;
 const resourcesPath = path.resolve(baseDir, 'Resources');
+const iconPath = path.resolve(resourcesPath, 'Characters', 'Stock Icons');
 
 console.log("Server Base Dir:", baseDir);
 
@@ -63,13 +64,23 @@ app.post('/api/scoreboard', (req, res) => {
         fs.writeFileSync(path.join(mainPath, "ScoreboardInfo.json"), data);
 
         fs.writeFileSync(path.join(mainPath, "Simple Texts", "Player 1.txt"), scoreboardJson.p1Name || "");
+        fs.writeFileSync(mainPath + "/Simple Texts/Player 1 Pronouns.txt", scoreboardJson.p1Pron);
+        fs.writeFileSync(mainPath + "/Simple Texts/Player 1 Tag.txt", scoreboardJson.p1Team);
+        fs.writeFileSync(mainPath + "/Simple Texts/Player 1 Character.txt", scoreboardJson.p1Character);
+        fs.writeFileSync(mainPath + "/Simple Texts/Left Winnerslosers.txt", scoreboardJson.p1WL);
+
         fs.writeFileSync(path.join(mainPath, "Simple Texts", "Player 2.txt"), scoreboardJson.p2Name || "");
+        fs.writeFileSync(mainPath + "/Simple Texts/Player 2 Pronouns.txt", scoreboardJson.p2Pron);
+        fs.writeFileSync(mainPath + "/Simple Texts/Player 2 Tag.txt", scoreboardJson.p2Team);
+        fs.writeFileSync(mainPath + "/Simple Texts/Player 2 Character.txt", scoreboardJson.p2Character);
+        fs.writeFileSync(mainPath + "/Simple Texts/Right Winnerslosers.txt", scoreboardJson.p2WL);
 
         fs.writeFileSync(path.join(mainPath, "Simple Texts", "Score 1.txt"), scoreboardJson.p1NScore || "0");
         fs.writeFileSync(path.join(mainPath, "Simple Texts", "Score 2.txt"), scoreboardJson.p2NScore || "0");
 
         fs.writeFileSync(path.join(mainPath, "Simple Texts", "Round.txt"), scoreboardJson.round || "");
         fs.writeFileSync(path.join(mainPath, "Simple Texts", "Format.txt"), scoreboardJson.format || "");
+        fs.writeFileSync(path.join(mainPath, "Simple Texts", "bestOf.txt"), scoreboardJson.bestOf || "");
         fs.writeFileSync(path.join(mainPath, "Simple Texts", "Tournament Name.txt"), scoreboardJson.tournamentName || "");
 
         fs.writeFileSync(path.join(mainPath, "Simple Texts", "Caster 1 Name.txt"), scoreboardJson.caster1Name || "");
@@ -79,6 +90,9 @@ app.post('/api/scoreboard', (req, res) => {
         fs.writeFileSync(path.join(mainPath, "Simple Texts", "Caster 2 Name.txt"), scoreboardJson.caster2Name || "");
         fs.writeFileSync(path.join(mainPath, "Simple Texts", "Caster 2 Twitter.txt"), scoreboardJson.caster2Twitter || "");
         fs.writeFileSync(path.join(mainPath, "Simple Texts", "Caster 2 Twitch.txt"), scoreboardJson.caster2Twitch || "");
+
+        fs.copyFileSync(iconPath + "/" + scoreboardJson.p1Character + "/1.png", mainPath + "/Simple Texts/Player 1 Character Icon/1.png");
+        fs.copyFileSync(iconPath + "/" + scoreboardJson.p2Character + "/1.png", mainPath + "/Simple Texts/Player 2 Character Icon/1.png");
 
         lastUpdateTimestamp = Date.now();
 

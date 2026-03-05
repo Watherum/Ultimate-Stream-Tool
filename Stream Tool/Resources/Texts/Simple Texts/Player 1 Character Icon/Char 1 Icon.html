@@ -1,0 +1,10 @@
+<img id="char1icon" src="1.png">
+
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.4/jquery.min.js"></script>
+    <script>
+        $(document).ready(function() {
+            setInterval(function() {
+                $("#char1icon").attr("src", "1.png?" + new Date().getTime());
+            }, 1000);
+        });
+    </script>
