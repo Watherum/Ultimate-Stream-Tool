@@ -64,16 +64,16 @@ app.post('/api/scoreboard', (req, res) => {
         fs.writeFileSync(path.join(mainPath, "ScoreboardInfo.json"), data);
 
         fs.writeFileSync(path.join(mainPath, "Simple Texts", "Player 1.txt"), scoreboardJson.p1Name || "");
-        fs.writeFileSync(mainPath + "/Simple Texts/Player 1 Pronouns.txt", scoreboardJson.p1Pron);
+        fs.writeFileSync(mainPath + "/Simple Texts/Player 1 Pronouns.txt", scoreboardJson.p1Pron || "");
         fs.writeFileSync(mainPath + "/Simple Texts/Player 1 Tag.txt", scoreboardJson.p1Team);
         fs.writeFileSync(mainPath + "/Simple Texts/Player 1 Character.txt", scoreboardJson.p1Character);
-        fs.writeFileSync(mainPath + "/Simple Texts/Left Winnerslosers.txt", scoreboardJson.p1WL);
+        fs.writeFileSync(mainPath + "/Simple Texts/Left Winnerslosers.txt", scoreboardJson.p1WL || "");
 
         fs.writeFileSync(path.join(mainPath, "Simple Texts", "Player 2.txt"), scoreboardJson.p2Name || "");
-        fs.writeFileSync(mainPath + "/Simple Texts/Player 2 Pronouns.txt", scoreboardJson.p2Pron);
+        fs.writeFileSync(mainPath + "/Simple Texts/Player 2 Pronouns.txt", scoreboardJson.p2Pron || "");
         fs.writeFileSync(mainPath + "/Simple Texts/Player 2 Tag.txt", scoreboardJson.p2Team);
         fs.writeFileSync(mainPath + "/Simple Texts/Player 2 Character.txt", scoreboardJson.p2Character);
-        fs.writeFileSync(mainPath + "/Simple Texts/Right Winnerslosers.txt", scoreboardJson.p2WL);
+        fs.writeFileSync(mainPath + "/Simple Texts/Right Winnerslosers.txt", scoreboardJson.p2WL || "");
 
         fs.writeFileSync(path.join(mainPath, "Simple Texts", "Score 1.txt"), scoreboardJson.p1NScore || "0");
         fs.writeFileSync(path.join(mainPath, "Simple Texts", "Score 2.txt"), scoreboardJson.p2NScore || "0");

@@ -340,7 +340,7 @@ async function loadSavedData() {
         charP1 = data.p1Character || "Random";
         skinP1 = data.p1Skin || `1`;
         colorP1 = data.p1Color || "Red";
-        currentP1WL = data.p1WL || "Nada";
+        currentP1WL = data.p1WL || "";
 
         // Player 2
         p2NameInp.value = data.p2Name || p2NameInp.value;
@@ -351,7 +351,7 @@ async function loadSavedData() {
         charP2 = data.p2Character || "Random";
         skinP2 = data.p2Skin || `1`;
         colorP2 = data.p2Color || "Blue";
-        currentP2WL = data.p2WL || "Nada";
+        currentP2WL = data.p2WL || "";
 
         currentBestOf = data.bestOf || "Bo3";
         roundInp.value = data.round || roundInp.value;
@@ -833,8 +833,8 @@ function setWLP2() {
     }
 }
 function deactivateWL() {
-    currentP1WL = "Nada";
-    currentP2WL = "Nada";
+    currentP1WL = "";
+    currentP2WL = "";
 
     const pWLs = document.getElementsByClassName("wlBox");
     for (let i = 0; i < pWLs.length; i++) {
