@@ -3,6 +3,7 @@ const cors = require('cors');
 const bodyParser = require('body-parser');
 const path = require('path');
 const fs = require('fs');
+const net = require('net');
 
 const app = express();
 const port = 1111;
@@ -27,6 +28,23 @@ const resourcesPath = path.resolve(baseDir, 'Resources');
 const iconPath = path.resolve(resourcesPath, 'Characters', 'Stock Icons');
 
 console.log("Server Base Dir:", baseDir);
+
+const blankScoreboard = {
+    p1Name: "", p1Team: "", p1Pron: "", p1NScore: "0",
+    p1Character: "Random", p1Skin: "1", p1Color: "Red", p1WL: "",
+    p2Name: "", p2Team: "", p2Pron: "", p2NScore: "0",
+    p2Character: "Random", p2Skin: "1", p2Color: "Blue", p2WL: "",
+    bestOf: "Bo3", round: "", format: "0", tournamentName: "",
+    caster1Name: "", caster1Twitter: "", caster1Twitch: "",
+    caster2Name: "", caster2Twitter: "", caster2Twitch: "",
+    allowIntro: false
+};
+try {
+    fs.writeFileSync(path.join(mainPath, "ScoreboardInfo.json"), JSON.stringify(blankScoreboard, null, 2));
+    console.log("Scoreboard cleared on startup");
+} catch (error) {
+    console.error("Failed to clear scoreboard on startup:", error);
+}
 
 app.use(express.static(guiPath));
 app.use('/Resources', express.static(resourcesPath));
@@ -104,8 +122,22 @@ app.post('/api/scoreboard', (req, res) => {
     }
 });
 
-app.listen(port, () => {
-    console.log(`Web interface running at http://localhost:${port}`);
+function findAvailablePort(startPort) {
+    return new Promise((resolve) => {
+        const tester = net.createServer();
+        tester.once('error', () => resolve(findAvailablePort(startPort + 1)));
+        tester.once('listening', () => tester.close(() => resolve(startPort)));
+        tester.listen(startPort);
+    });
+}
+
+const serverReady = findAvailablePort(port).then(availablePort => {
+    return new Promise((resolve) => {
+        app.listen(availablePort, () => {
+            console.log(`Web interface running at http://localhost:${availablePort}`);
+            resolve(availablePort);
+        });
+    });
 });
 
-module.exports = app;
+module.exports = { app, serverReady };

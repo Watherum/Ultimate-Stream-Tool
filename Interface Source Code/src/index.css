@@ -109,6 +109,8 @@ input[type="text"] {
 #overlay {
   width: calc(100% / 3);
   height: 100%;
+  display: flex;
+  flex-direction: column;
   transition: opacity 300ms;
 }
 

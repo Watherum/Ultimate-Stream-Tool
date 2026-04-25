@@ -240,7 +240,7 @@ async function init() {
                 const address = interfaces[k][k2];
                 // filter for IPv4 and non-internal (not 127.0.0.1)
                 if (address.family === 'IPv4' && !address.internal) {
-                    addresses.push(`http://${address.address}:1111`);
+                    addresses.push(`http://${address.address}:${serverPort}`);
                 }
             }
         }
@@ -426,7 +426,8 @@ async function loadSavedData() {
 let localTimestamp = Date.now();
 let isSaving = false;
 
-const API_BASE = isElectron ? 'http://localhost:1111' : '';
+const serverPort = new URLSearchParams(window.location.search).get('port') || '1111';
+const API_BASE = isElectron ? `http://localhost:${serverPort}` : '';
 
 async function pollForUpdates() {
     if (isSaving) return;

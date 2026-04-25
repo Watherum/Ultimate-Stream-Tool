@@ -2,14 +2,14 @@ const { app, globalShortcut, BrowserWindow } = require('electron');
 const path = require('path');
 
 // start the web server
-require('./server');
+const { serverReady } = require('./server');
 
 // Handle creating/removing shortcuts on Windows when installing/uninstalling.
 if (require('electron-squirrel-startup')) { // eslint-disable-line global-require
   app.quit();
 }
 
-const createWindow = () => {
+const createWindow = (port) => {
   // 1. Define the base size that looks good on Windows
   const baseWidth = 890;
   const baseHeight = 340;
@@ -20,7 +20,9 @@ const createWindow = () => {
   const mainWindow = new BrowserWindow({
     width: baseWidth + adjustment,
     height: baseHeight + adjustment,
-    resizable: false,
+    resizable: true,
+    minWidth: baseWidth + adjustment,
+    minHeight: baseHeight + adjustment,
 
     webPreferences: {
       nodeIntegration: true,
@@ -40,7 +42,7 @@ const createWindow = () => {
   // mainWindow.setAlwaysOnTop(true);
 
   // load the index.html of the app.
-  mainWindow.loadFile(path.join(__dirname, 'index.html'));
+  mainWindow.loadFile(path.join(__dirname, 'index.html'), { query: { port: String(port) } });
 };
 
 app.commandLine.appendSwitch('ozone-platform-hint', 'auto');
@@ -48,7 +50,9 @@ app.commandLine.appendSwitch('ozone-platform-hint', 'auto');
 // This method will be called when Electron has finished
 // initialization and is ready to create browser windows.
 // Some APIs can only be used after this event occurs.
-app.on('ready', createWindow);
+app.on('ready', () => {
+  serverReady.then(port => createWindow(port));
+});
 
 // Quit when all windows are closed.
 app.on('window-all-closed', () => {
