@@ -195,6 +195,20 @@ async function init() {
     document.getElementById('savePresetP1').addEventListener('click', () => savePreset(1));
     document.getElementById('savePresetP2').addEventListener('click', () => savePreset(2));
 
+    //mobile score +/- buttons
+    document.getElementById('p1ScorePlus').addEventListener('click', () => {
+        p1NScoreInp.value = Number(p1NScoreInp.value) + 1;
+    });
+    document.getElementById('p1ScoreMinus').addEventListener('click', () => {
+        p1NScoreInp.value = Math.max(0, Number(p1NScoreInp.value) - 1);
+    });
+    document.getElementById('p2ScorePlus').addEventListener('click', () => {
+        p2NScoreInp.value = Number(p2NScoreInp.value) + 1;
+    });
+    document.getElementById('p2ScoreMinus').addEventListener('click', () => {
+        p2NScoreInp.value = Math.max(0, Number(p2NScoreInp.value) - 1);
+    });
+
     //preset panel
     document.getElementById('presetsRegion').addEventListener('click', openPresetPanel);
     document.getElementById('closePresetPanel').addEventListener('click', closePresetPanel);

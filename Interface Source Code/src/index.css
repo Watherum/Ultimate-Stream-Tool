@@ -164,6 +164,8 @@ input[type="text"] {
   min-width: 34px;
   max-width: 70px;
   width: 34px;
+  border-top-left-radius: 0px;
+  border-bottom-left-radius: 0px;
   border-top-right-radius: 0px;
   border-bottom-right-radius: 0px;
 }
@@ -204,8 +206,10 @@ input[type="text"] {
   background: var(--bg4);
   cursor: pointer;
   position: relative;
-  border-top-right-radius: 0px;
-  border-bottom-right-radius: 0px;
+  border-top-left-radius: 0px;
+  border-bottom-left-radius: 0px;
+  border-top-right-radius: 3px;
+  border-bottom-right-radius: 3px;
   border: 1px solid var(--bg4);
   box-sizing: border-box;
   outline: none;
@@ -218,11 +222,10 @@ input[type="text"] {
   background: var(--bg4);
   color: var(--text2);
   border: 1px solid var(--bg4);
-  border-top-left-radius: 0px;
-  border-bottom-left-radius: 0px;
-  border-top-right-radius: 3px;
-  border-bottom-right-radius: 3px;
-  margin-left: -1px;
+  border-top-left-radius: 3px;
+  border-bottom-left-radius: 3px;
+  border-top-right-radius: 0px;
+  border-bottom-right-radius: 0px;
   cursor: pointer;
   font-size: 14px;
   padding: 0;
@@ -935,6 +938,10 @@ input[type="text"] {
   opacity: 1;
 }
 
+.mobileScoreBtn {
+  display: none;
+}
+
 #closeSettings {
   position: absolute;
   left: 10px;
@@ -954,7 +961,7 @@ input[type="text"] {
   body {
     overflow-y: auto;
   }
-  
+
   #viewport {
     height: auto;
     min-height: 100vh;
@@ -974,10 +981,19 @@ input[type="text"] {
   .player {
     width: 100%;
     height: auto;
-    min-height: 180px;
     margin-bottom: 5px;
     border-bottom: 1px solid var(--bg4);
     padding-bottom: 10px;
+  }
+
+  /* Hide decorative background render; let pEditor flow normally */
+  .charImgBox {
+    display: none;
+  }
+
+  .pEditor {
+    position: static;
+    height: auto;
   }
 
   /* Adjust separator (Swap/Clear buttons) */
@@ -993,7 +1009,7 @@ input[type="text"] {
     width: 80%;
     height: 100%;
   }
-  
+
   #clearButton {
     width: 20%;
     height: 100%;
@@ -1003,7 +1019,7 @@ input[type="text"] {
   .textInput {
     height: 40px;
     font-size: 16px; /* Prevents zoom on iOS */
-    width: 100% !important; /* Override JS auto-width */
+    width: 100% !important;
     max-width: none !important;
     margin-bottom: 5px;
   }
@@ -1012,44 +1028,122 @@ input[type="text"] {
   .pInfo {
     display: flex;
     flex-wrap: wrap;
+    gap: 5px;
     padding: 10px;
   }
-  
+
   #p1Tag, #p2Tag, #p1Pron, #p2Pron {
     flex: 1;
     min-width: 80px;
-    margin-right: 5px;
+    margin-right: 0;
+    margin-bottom: 0;
   }
-  
+
   #p1Name, #p2Name {
     flex-basis: 100%;
-    order: -1; /* Name first */
+    order: -1;
+    margin-bottom: 0;
   }
 
   .pColor {
     height: 40px;
     width: 40px;
+    margin-bottom: 0;
   }
   .colorContainer {
     height: 40px;
     width: 40px;
   }
 
-  /* Score and Character Selector */
-  .scoreInfo {
-    margin-top: 5px;
-    flex-wrap: wrap;
+  .presetSaveBtn {
+    height: 40px;
+    width: 40px;
+    margin-bottom: 0;
   }
+
+  /* Score row */
+  .scoreInfo {
+    margin-left: 0;
+    padding: 0 10px;
+    gap: 5px;
+    flex-wrap: nowrap;
+  }
+
   .scoreBox {
     height: 40px;
-    margin-bottom: 5px;
   }
-  #p1NScore, #p2NScore {
+
+  /* Score +/- buttons */
+  .mobileScoreBtn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 44px;
     height: 40px;
+    background: var(--bg4);
+    border: 1px solid var(--focused);
+    color: var(--text1);
+    font-size: 24px;
+    border-radius: 3px;
+    cursor: pointer;
+    padding: 0;
+    flex-shrink: 0;
+    outline: none;
   }
+  .mobileScoreBtn:hover {
+    border-color: var(--selected);
+  }
+  .mobileScoreBtn:active {
+    background: var(--bg2);
+  }
+
+  /* Score number input stays compact between the two buttons */
+  #p1NScore, #p2NScore {
+    width: 60px !important;
+    max-width: none !important;
+    height: 40px;
+    text-align: center;
+    flex-shrink: 0;
+    margin-bottom: 0;
+  }
+
   .wlBox {
     height: 40px;
     width: 40px;
+    margin-bottom: 0;
+  }
+
+  /* Character selector + skins */
+  .charInfo {
+    flex-wrap: wrap;
+    gap: 6px;
+    padding: 8px 10px;
+  }
+
+  .charSelectorImg {
+    width: 80px;
+  }
+
+  .skinSelector {
+    height: auto;
+    max-height: 90px;
+    overflow-y: auto;
+    flex-direction: row;
+    flex-wrap: wrap;
+    align-items: flex-start;
+    margin-left: 0;
+  }
+
+  #skinListP1, #skinListP2, #skinListP1Sheik, #skinListP2Sheik {
+    display: flex;
+    flex-wrap: wrap;
+    margin-top: 0;
+  }
+
+  .skinIcon {
+    width: 38px;
+    padding: 3px;
+    box-sizing: border-box;
   }
 
   /* Round Info Stacking */
@@ -1057,11 +1151,12 @@ input[type="text"] {
     flex-direction: column;
     height: auto;
     padding: 10px;
+    gap: 8px;
   }
 
   #bestOf {
     width: 100%;
-    margin-bottom: 10px;
+    margin-right: 0;
     order: -1;
   }
   .bestOfBox {
@@ -1070,19 +1165,48 @@ input[type="text"] {
     flex: 1;
     text-align: center;
   }
+  #presetsRegion {
+    flex: none;
+    width: 50px;
+  }
 
-  /* Caster Info Stacking */
+  #roundName, #tournamentName {
+    width: 100% !important;
+    margin-right: 0;
+    margin-bottom: 0;
+  }
+
+  /* Caster Info — icon + input pairs on their own lines */
   #casterInfo {
-    height: auto;
+    display: flex;
     flex-direction: column;
+    height: auto;
+    padding: 10px;
   }
   .caster {
+    display: flex;
     flex-wrap: wrap;
-    margin-bottom: 15px;
+    align-items: center;
+    gap: 6px;
+    margin-bottom: 12px;
   }
-  #cTwitter1, #cTwitter2, #cTwitch1, #cTwitch2 {
-    width: 48%;
-    margin: 1%;
+  .casterIcon {
+    margin: 0;
+    flex-shrink: 0;
+  }
+  #twitterIcon, #twitchIcon {
+    margin: 0;
+    flex-shrink: 0;
+  }
+  #cName1, #cName2,
+  #cTwitter1, #cTwitter2,
+  #cTwitch1, #cTwitch2 {
+    flex: 1;
+    min-width: 0;
+    width: auto !important;
+    max-width: none !important;
+    margin: 0;
+    margin-bottom: 0;
   }
 
   /* Character Roster Full Screen */
@@ -1098,8 +1222,21 @@ input[type="text"] {
     width: 23%;
   }
 
-  /* Bottom Bar */
+  /* Preset Panel Full Screen */
+  #presetPanel {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    z-index: 1000;
+  }
+
+  /* Sticky bottom bar so UPDATE is always reachable */
   #botBar {
+    position: sticky;
+    bottom: 0;
+    z-index: 10;
     height: 50px;
   }
   .botText {
@@ -1125,6 +1262,7 @@ input[type="text"] {
   #copyMatch {
     width: 100%;
     height: 50px;
+    margin-left: 0;
   }
 
   #closeSettings {

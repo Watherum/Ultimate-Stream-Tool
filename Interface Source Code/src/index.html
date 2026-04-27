@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Ultimate Stream Tool V3.1.0</title>
+    <title>Ultimate Stream Tool V3.2.0</title>
     <link rel="stylesheet" href="index.css">
     <script>if (typeof module === 'object') {window.module = module; module = undefined;}</script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
@@ -33,6 +33,9 @@
             <div class="pEditor" id="p1Editor">
 
               <div id="p1Info" class="pInfo">
+                <button id="savePresetP1" class="presetSaveBtn mousetrap" tabindex="-1" title="Save player as preset">
+                  <svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor"><path d="M17 3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V7l-4-4zm-5 16a3 3 0 1 1 0-6 3 3 0 0 1 0 6zm3-10H5V5h10v4z"/></svg>
+                </button>
                 <input type="text" id="p1Tag" class="textInput mousetrap" tabindex="1" placeholder="Tag" title="Insert the tag/team/sponsor here" spellcheck="false" contenteditable="true">
                 <input type="text" id="p1Pron" class="textInput mousetrap" tabindex="3" placeholder="Pron" title="Insert the pronoun here." spellcheck="false">
                 <input type="text" id="p1Name" class="textInput mousetrap" tabindex="2" placeholder="Player 1" title="Insert P1's name here" spellcheck="false">
@@ -44,7 +47,6 @@
 
                   </div>
                 </div>
-                <button id="savePresetP1" class="presetSaveBtn mousetrap" tabindex="-1" title="Save player as preset">★</button>
               </div>
   
               <div class="scoreInfo">
@@ -55,14 +57,16 @@
                   <input type="checkbox" id="winP1-2" class="scoreCheck mousetrap">
                   <input type="checkbox" id="winP1-3" class="scoreCheck mousetrap">
                 </div>
+                <button type="button" id="p1ScoreMinus" class="mobileScoreBtn" tabindex="-1">−</button>
                 <input type="number" min= "0" id="p1NScore" class="textInput mousetrap" tabindex="3" placeholder="Score 1" title="Insert P1's score here" spellcheck="false">
-                
-                
+                <button type="button" id="p1ScorePlus" class="mobileScoreBtn" tabindex="-1">+</button>
+
+
                 <div class="wlButtons">
                   <div id="p1W" class="wlBox">[W]</div>
                   <div id="p1L" class="wlBox">[L]</div>
                 </div>
-                
+
               </div>
 
               <div class="charInfo">
@@ -108,6 +112,9 @@
             <div class="pEditor">
 
               <div id="p2Info" class="pInfo">
+                <button id="savePresetP2" class="presetSaveBtn mousetrap" tabindex="-1" title="Save player as preset">
+                  <svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor"><path d="M17 3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V7l-4-4zm-5 16a3 3 0 1 1 0-6 3 3 0 0 1 0 6zm3-10H5V5h10v4z"/></svg>
+                </button>
                 <input type="text" id="p2Tag" class="textInput mousetrap" tabindex="3" placeholder="Tag" title="Insert the tag/team/sponsor here." spellcheck="false">
                 <input type="text" id="p2Pron" class="textInput mousetrap" tabindex="3" placeholder="Pronoun" title="Insert the pronoun here." spellcheck="false">
                 <input type="text" id="p2Name" class="textInput mousetrap" tabindex="4" placeholder="Player 2" title="Insert P2's name here." spellcheck="false">
@@ -117,7 +124,6 @@
                   </div>
                   <div class="dropdownColor" id="dropdownColorP2"></div>
                 </div>
-                <button id="savePresetP2" class="presetSaveBtn mousetrap" tabindex="-1" title="Save player as preset">★</button>
               </div>
   
               <div class="scoreInfo">
@@ -128,7 +134,9 @@
                   <input type="checkbox" id="winP2-2" class="scoreCheck mousetrap">
                   <input type="checkbox" id="winP2-3" class="scoreCheck mousetrap">
                 </div>
+                <button type="button" id="p2ScoreMinus" class="mobileScoreBtn" tabindex="-1">−</button>
                 <input type="number" min= "0" id="p2NScore" class="textInput mousetrap" tabindex="3" placeholder="Score 2" title="Insert P2's score here" spellcheck="false">
+                <button type="button" id="p2ScorePlus" class="mobileScoreBtn" tabindex="-1">+</button>
 
                 <div class="wlButtons">
                   <div id="p2W" class="wlBox">[W]</div>
