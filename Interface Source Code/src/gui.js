@@ -45,6 +45,7 @@ let currentBestOf = "Bo3";
 
 let movedSettings = false;
 let charP1Active = false;
+let playerPresets = [];
 
 
 const viewport = document.getElementById('viewport');
@@ -165,6 +166,41 @@ async function init() {
     //check whenever the player's name has a skin
     p1NameInp.addEventListener("input", resizeInput);
     p2NameInp.addEventListener("input", resizeInput);
+
+    //reset score, tag, and pronouns when name changes
+    p1NameInp.addEventListener("change", () => {
+        p1NScoreInp.value = "0";
+        p1Win1.checked = false;
+        p1Win2.checked = false;
+        p1Win3.checked = false;
+        changeInputWidth(p1NScoreInp);
+        p1TagInp.value = "";
+        changeInputWidth(p1TagInp);
+        p1PronInp.value = "";
+        changeInputWidth(p1PronInp);
+    });
+    p2NameInp.addEventListener("change", () => {
+        p2NScoreInp.value = "0";
+        p2Win1.checked = false;
+        p2Win2.checked = false;
+        p2Win3.checked = false;
+        changeInputWidth(p2NScoreInp);
+        p2TagInp.value = "";
+        changeInputWidth(p2TagInp);
+        p2PronInp.value = "";
+        changeInputWidth(p2PronInp);
+    });
+
+    //preset save buttons
+    document.getElementById('savePresetP1').addEventListener('click', () => savePreset(1));
+    document.getElementById('savePresetP2').addEventListener('click', () => savePreset(2));
+
+    //preset panel
+    document.getElementById('presetsRegion').addEventListener('click', openPresetPanel);
+    document.getElementById('closePresetPanel').addEventListener('click', closePresetPanel);
+    document.getElementById('presetSearchInp').addEventListener('input', (e) => renderPresetList(e.target.value));
+
+    await loadPresets();
 
     //resize the box whenever the user types
     p1TagInp.addEventListener("input", resizeInput);
@@ -957,6 +993,128 @@ function swap() {
     setScore(tempP2Score, p1Win1, p1Win2, p1Win3);
     setScore(tempP1Score, p2Win1, p2Win2, p2Win3);
 }
+
+async function loadPresets() {
+    try {
+        const res = await fetch(API_BASE + '/api/presets');
+        playerPresets = await res.json();
+    } catch (e) {
+        playerPresets = [];
+    }
+}
+
+async function savePreset(pNum) {
+    const nameInp = pNum === 1 ? p1NameInp : p2NameInp;
+    const tagInp  = pNum === 1 ? p1TagInp  : p2TagInp;
+    const pronInp = pNum === 1 ? p1PronInp : p2PronInp;
+    const name = nameInp.value.trim();
+    if (!name) return;
+    const character = pNum === 1 ? charP1 : charP2;
+    const skin      = pNum === 1 ? skinP1 : skinP2;
+    await fetch(API_BASE + '/api/presets', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name, tag: tagInp.value, pronouns: pronInp.value, character, skin })
+    });
+    await loadPresets();
+}
+
+async function deletePreset(name) {
+    await fetch(API_BASE + '/api/presets/' + encodeURIComponent(name), { method: 'DELETE' });
+    await loadPresets();
+    renderPresetList(document.getElementById('presetSearchInp').value);
+}
+
+function openPresetPanel() {
+    const panel = document.getElementById('presetPanel');
+    panel.style.display = 'flex';
+    requestAnimationFrame(() => {
+        panel.style.opacity = '1';
+        panel.style.transform = 'scale(1)';
+    });
+    document.getElementById('presetSearchInp').value = '';
+    renderPresetList('');
+    document.getElementById('presetSearchInp').focus({ preventScroll: true });
+}
+
+function closePresetPanel() {
+    const panel = document.getElementById('presetPanel');
+    panel.style.opacity = '0';
+    panel.style.transform = 'scale(1.05)';
+    setTimeout(() => { panel.style.display = 'none'; }, 200);
+}
+
+function renderPresetList(query) {
+    const container = document.getElementById('presetListContainer');
+    const matches = query
+        ? playerPresets.filter(p => p.name.toLowerCase().includes(query.toLowerCase()))
+        : playerPresets;
+    container.innerHTML = '';
+    if (!matches.length) {
+        const msg = document.createElement('div');
+        msg.style.cssText = 'padding: 12px; color: var(--text2); font-size: 12px; text-align: center;';
+        msg.textContent = playerPresets.length ? 'No presets match your search.' : 'No presets saved yet. Use the ★ button to save a player.';
+        container.appendChild(msg);
+        return;
+    }
+    matches.forEach(preset => {
+        const row = document.createElement('div');
+        row.className = 'presetPanelEntry';
+
+        const info = document.createElement('div');
+        info.className = 'presetPanelInfo';
+        const nameEl = document.createElement('div');
+        nameEl.className = 'presetPanelName';
+        nameEl.textContent = preset.name;
+        const detailEl = document.createElement('div');
+        detailEl.className = 'presetPanelDetails';
+        detailEl.textContent = [preset.tag, preset.pronouns, preset.character].filter(Boolean).join(' · ');
+        info.appendChild(nameEl);
+        info.appendChild(detailEl);
+
+        const p1Btn = document.createElement('button');
+        p1Btn.className = 'loadPBtn';
+        p1Btn.textContent = 'P1';
+        p1Btn.addEventListener('click', () => { applyPreset(1, preset); closePresetPanel(); });
+
+        const p2Btn = document.createElement('button');
+        p2Btn.className = 'loadPBtn';
+        p2Btn.textContent = 'P2';
+        p2Btn.addEventListener('click', () => { applyPreset(2, preset); closePresetPanel(); });
+
+        const delBtn = document.createElement('button');
+        delBtn.className = 'presetDeleteBtn';
+        delBtn.textContent = '✕';
+        delBtn.title = 'Delete preset';
+        delBtn.addEventListener('click', () => deletePreset(preset.name));
+
+        row.appendChild(info);
+        row.appendChild(p1Btn);
+        row.appendChild(p2Btn);
+        row.appendChild(delBtn);
+        container.appendChild(row);
+    });
+}
+
+function applyPreset(pNum, preset) {
+    const nameInp = pNum === 1 ? p1NameInp : p2NameInp;
+    const tagInp  = pNum === 1 ? p1TagInp  : p2TagInp;
+    const pronInp = pNum === 1 ? p1PronInp : p2PronInp;
+    nameInp.value = preset.name;
+    tagInp.value  = preset.tag || '';
+    pronInp.value = preset.pronouns || '';
+    changeInputWidth(nameInp);
+    changeInputWidth(tagInp);
+    changeInputWidth(pronInp);
+
+    if (preset.character) {
+        changeCharacterManual(preset.character, pNum);
+        const skin = preset.skin || '1';
+        if (pNum === 1) { skinP1 = skin; charImgChange(charImgP1, preset.character, skin); }
+        else            { skinP2 = skin; charImgChange(charImgP2, preset.character, skin); }
+    }
+}
+
 
 function clearPlayers() {
     //clear player texts

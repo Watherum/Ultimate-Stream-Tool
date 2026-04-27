@@ -204,11 +204,178 @@ input[type="text"] {
   background: var(--bg4);
   cursor: pointer;
   position: relative;
-  border-top-right-radius: 3px;
-  border-bottom-right-radius: 3px;
+  border-top-right-radius: 0px;
+  border-bottom-right-radius: 0px;
   border: 1px solid var(--bg4);
   box-sizing: border-box;
   outline: none;
+}
+
+.presetSaveBtn {
+  float: left;
+  height: 30px;
+  width: 30px;
+  background: var(--bg4);
+  color: var(--text2);
+  border: 1px solid var(--bg4);
+  border-top-left-radius: 0px;
+  border-bottom-left-radius: 0px;
+  border-top-right-radius: 3px;
+  border-bottom-right-radius: 3px;
+  margin-left: -1px;
+  cursor: pointer;
+  font-size: 14px;
+  padding: 0;
+  transition: border-color 100ms, color 100ms;
+  outline: none;
+  box-sizing: border-box;
+}
+.presetSaveBtn:hover {
+  border-color: var(--selected);
+  color: var(--selected);
+}
+.presetSaveBtn:active {
+  background: var(--bg2);
+}
+
+#presetsRegion {
+  cursor: pointer;
+  margin-left: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+}
+
+#presetsRegion:hover {
+  border-color: var(--selected);
+}
+
+#presetsIcon {
+  width: 14px;
+  height: 14px;
+  fill: var(--text2);
+}
+
+#presetPanel {
+  position: absolute;
+  width: calc(100% / 3);
+  height: 100%;
+  left: calc(100% / 3);
+  z-index: 4;
+  display: none;
+  flex-direction: column;
+  background-color: #2b2b2bec;
+  opacity: 0;
+  transform: scale(1.05);
+  transition: opacity 200ms, transform 200ms;
+}
+
+#presetPanelTop {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 8px;
+  border-bottom: 1px solid var(--bg4);
+  flex-shrink: 0;
+}
+
+#closePresetPanel {
+  cursor: pointer;
+  color: var(--text1);
+  display: flex;
+  align-items: center;
+  flex-shrink: 0;
+}
+
+#closePresetPanel:hover {
+  color: var(--selected);
+}
+
+#presetSearchInp {
+  flex: 1;
+  height: 26px;
+  padding: 2px 6px;
+  border-radius: 3px;
+  border: 1px solid var(--bg4);
+  background-color: var(--bg4);
+  color: var(--text1);
+  outline: none;
+  font-family: 'Roboto-Regular';
+  font-size: 13px;
+}
+
+#presetSearchInp:focus {
+  border-color: var(--selected);
+  background-color: var(--bg2);
+}
+
+#presetListContainer {
+  overflow-y: auto;
+  flex: 1;
+}
+
+.presetPanelEntry {
+  display: flex;
+  align-items: center;
+  padding: 5px 10px;
+  gap: 6px;
+  border-bottom: 1px solid var(--bg4);
+}
+
+.presetPanelEntry:hover {
+  background-color: var(--bg2);
+}
+
+.presetPanelInfo {
+  flex: 1;
+  min-width: 0;
+}
+
+.presetPanelName {
+  font-size: 13px;
+  color: var(--text1);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.presetPanelDetails {
+  font-size: 11px;
+  color: var(--text2);
+}
+
+.loadPBtn {
+  font-size: 11px;
+  padding: 2px 7px;
+  height: 22px;
+  background: var(--bg4);
+  border: 1px solid var(--bg4);
+  border-radius: 3px;
+  color: var(--text1);
+  cursor: pointer;
+  outline: none;
+  transition: border-color 100ms;
+  flex-shrink: 0;
+}
+
+.loadPBtn:hover {
+  border-color: var(--selected);
+}
+
+.presetDeleteBtn {
+  color: var(--text2);
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 12px;
+  padding: 0 2px;
+  outline: none;
+  flex-shrink: 0;
+}
+
+.presetDeleteBtn:hover {
+  color: #ff6b6b;
 }
 
 .pColor:hover {

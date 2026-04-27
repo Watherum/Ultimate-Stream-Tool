@@ -122,6 +122,48 @@ app.post('/api/scoreboard', (req, res) => {
     }
 });
 
+const presetsPath = path.join(mainPath, 'PlayerPresets.json');
+
+app.get('/api/presets', (req, res) => {
+    try {
+        if (fs.existsSync(presetsPath)) {
+            res.json(JSON.parse(fs.readFileSync(presetsPath, 'utf8')));
+        } else {
+            res.json([]);
+        }
+    } catch (e) {
+        res.json([]);
+    }
+});
+
+app.post('/api/presets', (req, res) => {
+    try {
+        let presets = fs.existsSync(presetsPath)
+            ? JSON.parse(fs.readFileSync(presetsPath, 'utf8'))
+            : [];
+        const incoming = req.body;
+        const idx = presets.findIndex(p => p.name.toLowerCase() === incoming.name.toLowerCase() && (p.character || '').toLowerCase() === (incoming.character || '').toLowerCase());
+        if (idx >= 0) presets[idx] = incoming; else presets.push(incoming);
+        fs.writeFileSync(presetsPath, JSON.stringify(presets, null, 2));
+        res.send({ status: 'success' });
+    } catch (e) {
+        res.status(500).send('Error saving preset');
+    }
+});
+
+app.delete('/api/presets/:name', (req, res) => {
+    try {
+        let presets = fs.existsSync(presetsPath)
+            ? JSON.parse(fs.readFileSync(presetsPath, 'utf8'))
+            : [];
+        presets = presets.filter(p => p.name.toLowerCase() !== decodeURIComponent(req.params.name).toLowerCase());
+        fs.writeFileSync(presetsPath, JSON.stringify(presets, null, 2));
+        res.send({ status: 'success' });
+    } catch (e) {
+        res.status(500).send('Error deleting preset');
+    }
+});
+
 function findAvailablePort(startPort) {
     return new Promise((resolve) => {
         const tester = net.createServer();

@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Ultimate Stream Tool V3.0.0</title>
+    <title>Ultimate Stream Tool V3.1.0</title>
     <link rel="stylesheet" href="index.css">
     <script>if (typeof module === 'object') {window.module = module; module = undefined;}</script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
@@ -44,6 +44,7 @@
 
                   </div>
                 </div>
+                <button id="savePresetP1" class="presetSaveBtn mousetrap" tabindex="-1" title="Save player as preset">★</button>
               </div>
   
               <div class="scoreInfo">
@@ -116,6 +117,7 @@
                   </div>
                   <div class="dropdownColor" id="dropdownColorP2"></div>
                 </div>
+                <button id="savePresetP2" class="presetSaveBtn mousetrap" tabindex="-1" title="Save player as preset">★</button>
               </div>
   
               <div class="scoreInfo">
@@ -159,7 +161,12 @@
           <div id="bestOf">
             <div id="bo3Div" class="bestOfBox">Best of 3</div>
             <div id="bo5Div" class="bestOfBox">Best of 5</div>
-            <input type="number" min= "0" id="format" class="textInput mousetrap" placeholder="0"  spellcheck="false">
+            <input type="number" min= "0" id="format" class="textInput mousetrap" placeholder="0"  spellcheck="false" style="display:none;">
+            <div id="presetsRegion" class="bestOfBox" title="Player Presets">
+              <svg id="presetsIcon" viewBox="0 0 20 20">
+                <path d="M10 2a4 4 0 1 0 0 8 4 4 0 0 0 0-8zm0 10c-5 0-8 2.24-8 4v1h16v-1c0-1.76-3-4-8-4z"/>
+              </svg>
+            </div>
           </div>
          
           <input type="text" id="roundName" class="textInput mousetrap" placeholder="Current Round" spellcheck="false">
@@ -280,6 +287,18 @@ They will always appear when typing 'Grand' on the round box.">
           <input type="text" id="charSearchInput" placeholder="Search..." autocomplete="off">
         </div>
         <div id="charGrid"></div>
+      </div>
+
+      <div id="presetPanel">
+        <div id="presetPanelTop">
+          <div id="closePresetPanel">
+            <svg viewBox="0 0 24 24" width="18" height="18">
+              <path fill="currentColor" d="M20,11V13H8L13.5,18.5L12.08,19.92L4.16,12L12.08,4.08L13.5,5.5L8,11H20Z"/>
+            </svg>
+          </div>
+          <input type="text" id="presetSearchInp" placeholder="Search presets..." autocomplete="off">
+        </div>
+        <div id="presetListContainer"></div>
       </div>
 
       <div id="goBack"></div>
