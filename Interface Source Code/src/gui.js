@@ -174,10 +174,6 @@ async function init() {
         p1Win2.checked = false;
         p1Win3.checked = false;
         changeInputWidth(p1NScoreInp);
-        p1TagInp.value = "";
-        changeInputWidth(p1TagInp);
-        p1PronInp.value = "";
-        changeInputWidth(p1PronInp);
     });
     p2NameInp.addEventListener("change", () => {
         p2NScoreInp.value = "0";
@@ -185,15 +181,11 @@ async function init() {
         p2Win2.checked = false;
         p2Win3.checked = false;
         changeInputWidth(p2NScoreInp);
-        p2TagInp.value = "";
-        changeInputWidth(p2TagInp);
-        p2PronInp.value = "";
-        changeInputWidth(p2PronInp);
     });
 
     //preset save buttons
-    document.getElementById('savePresetP1').addEventListener('click', () => savePreset(1));
-    document.getElementById('savePresetP2').addEventListener('click', () => savePreset(2));
+    document.getElementById('savePresetP1').addEventListener('pointerdown', () => savePreset(1));
+    document.getElementById('savePresetP2').addEventListener('pointerdown', () => savePreset(2));
 
     //mobile score +/- buttons
     document.getElementById('p1ScorePlus').addEventListener('click', () => {
