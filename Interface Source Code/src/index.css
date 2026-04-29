@@ -650,16 +650,18 @@ input[type="text"] {
   transform: scale(1); /* cheap trick to show a correct border */
 }
 
-#bo3Div {
-  border-top-right-radius: 0px;
-  border-bottom-right-radius: 0px;
+#boToggleDiv {
   margin-left: 4px;
+  border-top-right-radius: 0;
+  border-bottom-right-radius: 0;
 }
-#bo5Div {
-  border-top-left-radius: 0px;
-  border-bottom-left-radius: 0px;
+
+#boPrevDiv {
   margin-left: -1px;
   margin-right: 4px;
+  padding: 5px 7px;
+  border-top-left-radius: 0;
+  border-bottom-left-radius: 0;
 }
 
 #format {

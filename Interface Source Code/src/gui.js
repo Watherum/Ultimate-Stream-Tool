@@ -218,12 +218,11 @@ async function init() {
     p1NScoreInp.addEventListener("input", resizeInput);
     p2NScoreInp.addEventListener("input", resizeInput);
 
-    //set click listeners to change the "best of" status
-    document.getElementById("bo3Div").addEventListener("click", changeBestOf);
-    document.getElementById("bo5Div").addEventListener("click", changeBestOf);
-    //set initial value
-    document.getElementById("bo5Div").style.color = "var(--text2)";
-    document.getElementById("bo3Div").style.backgroundImage = "linear-gradient(to top, #575757, #00000000)";
+    //set click listeners to cycle between best of values
+    document.getElementById("boToggleDiv").addEventListener("click", changeBestOf);
+    document.getElementById("boPrevDiv").addEventListener("click", changeBestOfPrev);
+    document.getElementById("boToggleDiv").style.backgroundImage = "linear-gradient(to top, #575757, #00000000)";
+    document.getElementById("boPrevDiv").style.backgroundImage = "linear-gradient(to top, #575757, #00000000)";
 
 
     //check if the round is grand finals
@@ -442,11 +441,7 @@ async function loadSavedData() {
         if (currentP2WL == "W") p2W.click();
         else if (currentP2WL == "L") p2L.click();
 
-        if (currentBestOf == "Bo5") {
-            if (document.getElementById("bo5Div")) document.getElementById("bo5Div").click();
-        } else {
-            if (document.getElementById("bo3Div")) document.getElementById("bo3Div").click();
-        }
+        applyBestOf();
 
         const resize = (el) => { if (el) resizeInput.call(el); };
 
@@ -911,26 +906,28 @@ function getTextWidth(text, font) {
 }
 
 
-//used when clicking on the "Best of" buttons
 function changeBestOf() {
-    let theOtherBestOf; //we always gotta know
-    if (this == document.getElementById("bo5Div")) {
-        currentBestOf = "Bo5";
-        theOtherBestOf = document.getElementById("bo3Div");
-        p1Win3.style.display = "block";
-        p2Win3.style.display = "block";
-    } else {
-        currentBestOf = "Bo3";
-        theOtherBestOf = document.getElementById("bo5Div");
-        p1Win3.style.display = "none";
-        p2Win3.style.display = "none";
-    }
+    if (currentBestOf === "Bo3") currentBestOf = "Bo5";
+    else if (currentBestOf === "Bo5") currentBestOf = "BoX";
+    else currentBestOf = "Bo3";
+    applyBestOf();
+}
 
-    //change the color and background of the buttons
-    this.style.color = "var(--text1)";
-    this.style.backgroundImage = "linear-gradient(to top, #575757, #00000000)";
-    theOtherBestOf.style.color = "var(--text2)";
-    theOtherBestOf.style.backgroundImage = "var(--bg4)";
+function changeBestOfPrev() {
+    if (currentBestOf === "Bo3") currentBestOf = "BoX";
+    else if (currentBestOf === "BoX") currentBestOf = "Bo5";
+    else currentBestOf = "Bo3";
+    applyBestOf();
+}
+
+function applyBestOf() {
+    const btn = document.getElementById("boToggleDiv");
+    if (!btn) return;
+    const labels = { Bo3: "Best of 3", Bo5: "Best of 5", BoX: "Best of X" };
+    btn.textContent = labels[currentBestOf] || "Best of 3";
+    const showThird = currentBestOf === "Bo5" || currentBestOf === "BoX";
+    p1Win3.style.display = showThird ? "block" : "none";
+    p2Win3.style.display = showThird ? "block" : "none";
 }
 
 
