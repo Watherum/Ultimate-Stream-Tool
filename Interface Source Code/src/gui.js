@@ -58,18 +58,8 @@ const p2NameInp = document.getElementById('p2Name');
 const p2TagInp = document.getElementById('p2Tag');
 const p2PronInp = document.getElementById('p2Pron');
 const p2NScoreInp = document.getElementById('p2NScore');
-// const p1ScoreTicks = document.getElementById('p1ScoreTicks');
-// const p2ScoreTicks = document.getElementById('p2ScoreTicks');
-
 const charImgP1 = document.getElementById('p1CharImg');
 const charImgP2 = document.getElementById('p2CharImg');
-
-const p1Win1 = document.getElementById('winP1-1');
-const p1Win2 = document.getElementById('winP1-2');
-const p1Win3 = document.getElementById('winP1-3');
-const p2Win1 = document.getElementById('winP2-1');
-const p2Win2 = document.getElementById('winP2-2');
-const p2Win3 = document.getElementById('winP2-3');
 
 const p1W = document.getElementById('p1W');
 const p1L = document.getElementById('p1L');
@@ -146,14 +136,6 @@ async function init() {
     });
 
 
-    //score checks
-    p1Win1.addEventListener("click", changeScoreTicks1);
-    p2Win1.addEventListener("click", changeScoreTicks1);
-    p1Win2.addEventListener("click", changeScoreTicks2);
-    p2Win2.addEventListener("click", changeScoreTicks2);
-    p1Win3.addEventListener("click", changeScoreTicks3);
-    p2Win3.addEventListener("click", changeScoreTicks3);
-
     await loadSavedData();
 
     //set click listeners for the [W] and [L] buttons
@@ -170,16 +152,10 @@ async function init() {
     //reset score, tag, and pronouns when name changes
     p1NameInp.addEventListener("change", () => {
         p1NScoreInp.value = "0";
-        p1Win1.checked = false;
-        p1Win2.checked = false;
-        p1Win3.checked = false;
         changeInputWidth(p1NScoreInp);
     });
     p2NameInp.addEventListener("change", () => {
         p2NScoreInp.value = "0";
-        p2Win1.checked = false;
-        p2Win2.checked = false;
-        p2Win3.checked = false;
         changeInputWidth(p2NScoreInp);
     });
 
@@ -770,66 +746,6 @@ function changeSkinP2() {
 }
 
 
-//whenever clicking on the first score tick
-function changeScoreTicks1() {
-    let pNum = 1;
-    if (this == p2Win1) {
-        pNum = 2;
-    }
-
-    //deactivate wins 2 and 3
-    document.getElementById('winP' + pNum + '-2').checked = false;
-    document.getElementById('winP' + pNum + '-3').checked = false;
-}
-//whenever clicking on the second score tick
-function changeScoreTicks2() {
-    let pNum = 1;
-    if (this == p2Win2) {
-        pNum = 2;
-    }
-
-    //deactivate wins 2 and 3
-    document.getElementById('winP' + pNum + '-1').checked = true;
-    document.getElementById('winP' + pNum + '-3').checked = false;
-}
-//something something the third score tick
-function changeScoreTicks3() {
-    let pNum = 1;
-    if (this == p2Win3) {
-        pNum = 2;
-    }
-
-    //deactivate wins 2 and 3
-    document.getElementById('winP' + pNum + '-1').checked = true;
-    document.getElementById('winP' + pNum + '-2').checked = true;
-}
-
-// const checkNScore = (scoreInp, tick1, tick2, tick3) => {
-//     return scoreInp.attributes.numbered.value == 1
-//         ? scoreInp.value
-//             ? scoreInp.value
-//             : "0"
-//         : checkScore(tick1, tick2, tick3).toString();
-// };
-
-
-//returns how much score does a player have
-function checkScore(tick1, tick2, tick3) {
-    let totalScore = 0;
-
-    if (tick1.checked) {
-        totalScore++;
-    }
-    if (tick2.checked) {
-        totalScore++;
-    }
-    if (tick3.checked) {
-        totalScore++;
-    }
-
-    return totalScore;
-}
-
 //gives a victory to player 1 
 function giveWinP1() {
     p1NScoreInp.value = Number(p1NScoreInp.value) + 1;
@@ -909,12 +825,18 @@ function getTextWidth(text, font) {
 function changeBestOf() {
     if (currentBestOf === "Bo3") currentBestOf = "Bo5";
     else if (currentBestOf === "Bo5") currentBestOf = "BoX";
+    else if (currentBestOf === "BoX") currentBestOf = "Ft5";
+    else if (currentBestOf === "Ft5") currentBestOf = "Ft10";
+    else if (currentBestOf === "Ft10") currentBestOf = "FtX";
     else currentBestOf = "Bo3";
     applyBestOf();
 }
 
 function changeBestOfPrev() {
-    if (currentBestOf === "Bo3") currentBestOf = "BoX";
+    if (currentBestOf === "Bo3") currentBestOf = "FtX";
+    else if (currentBestOf === "FtX") currentBestOf = "Ft10";
+    else if (currentBestOf === "Ft10") currentBestOf = "Ft5";
+    else if (currentBestOf === "Ft5") currentBestOf = "BoX";
     else if (currentBestOf === "BoX") currentBestOf = "Bo5";
     else currentBestOf = "Bo3";
     applyBestOf();
@@ -923,11 +845,8 @@ function changeBestOfPrev() {
 function applyBestOf() {
     const btn = document.getElementById("boToggleDiv");
     if (!btn) return;
-    const labels = { Bo3: "Best of 3", Bo5: "Best of 5", BoX: "Best of X" };
+    const labels = { Bo3: "Best of 3", Bo5: "Best of 5", BoX: "Best of X", Ft5: "First to 5", Ft10: "First to 10", FtX: "First to X" };
     btn.textContent = labels[currentBestOf] || "Best of 3";
-    const showThird = currentBestOf === "Bo5" || currentBestOf === "BoX";
-    p1Win3.style.display = showThird ? "block" : "none";
-    p2Win3.style.display = showThird ? "block" : "none";
 }
 
 
@@ -991,10 +910,6 @@ function swap() {
     skinP2 = tempP1Skin;
 
 
-    let tempP1Score = checkScore(p1Win1, p1Win2, p1Win3);
-    let tempP2Score = checkScore(p2Win1, p2Win2, p2Win3);
-    setScore(tempP2Score, p1Win1, p1Win2, p1Win3);
-    setScore(tempP1Score, p2Win1, p2Win2, p2Win3);
 }
 
 async function loadPresets() {
@@ -1157,26 +1072,6 @@ function clearPlayers() {
     document.getElementById('skinListP2Sheik').innerHTML = '';
     document.getElementById('skinSelectorP2').style.opacity = 0;
 
-    //clear player scores
-    let checks = document.getElementsByClassName("scoreCheck");
-    for (let i = 0; i < checks.length; i++) {
-        checks[i].checked = false;
-    }
-}
-
-function setScore(score, tick1, tick2, tick3) {
-    tick1.checked = false;
-    tick2.checked = false;
-    tick3.checked = false;
-    if (score > 0) {
-        tick1.checked = true;
-        if (score > 1) {
-            tick2.checked = true;
-            if (score > 2) {
-                tick3.checked = true;
-            }
-        }
-    }
 }
 
 

@@ -78,7 +78,8 @@
             p2score.textContent = data.score[1];
 
             round.textContent = data.round;
-            bestOf.textContent = `Best of ${data.bestOf}`;
+            const bestOfLabels = { Bo3: "Best of 3", Bo5: "Best of 5", BoX: "Best of X", Ft5: "First to 5", Ft10: "First to 10", FtX: "First to X" };
+            bestOf.textContent = bestOfLabels[data.bestOf] || `Best of ${data.bestOf}`;
 
             p1wl.textContent = data.wl[0];
             p2wl.textContent = data.wl[1];

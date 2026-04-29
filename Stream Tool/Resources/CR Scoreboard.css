@@ -19,14 +19,20 @@
     color:white;
     font-size: 27px;
     top: 60px;
-    left: 851px;
+    left: 48%;
+	transform: translateX(-47%);
+    text-align: center;
+    white-space: nowrap;
 }
 
 #bestOf {
     color:white;
     font-size: 27px;
     top: 90px;
-    left: 875px;
+    left: 48%;
+	transform: translateX(-47%);
+    text-align: center;
+    white-space: nowrap;
 }
 
 .tag {
