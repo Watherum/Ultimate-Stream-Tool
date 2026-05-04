@@ -1,0 +1,110 @@
+@font-face {
+    font-family: "Roboto";
+    src: url('Fonts/Roboto-Bold.ttf');
+}
+
+#canvas {
+    position: relative;
+    width: 1920px;
+    height: 1080px;
+    font-family: 'Roboto';
+}
+
+#canvas img,
+#canvas > span {
+    position: absolute;
+}
+
+#round {
+    color:white;
+    font-size: 27px;
+    top: 80px;
+    left: 48.5%;
+	transform: translateX(-47%);
+    text-align: center;
+    white-space: nowrap;
+}
+
+#bestOf {
+    color:white;
+    font-size: 27px;
+    top: 104px;
+    left: 48.4%;
+	transform: translateX(-47%);
+    text-align: center;
+    white-space: nowrap;
+}
+
+.tag {
+    color: yellow;
+}
+
+#p1name {
+    color:white;
+    font-size: 40px;
+    top: 60px;
+    left: 330px;
+    white-space: nowrap;
+}
+
+#char1icon {
+    width: 50px;
+    top: 65px;
+    left: 245px;
+}
+
+#p1pronouns {
+    color:white;
+    font-size: 20px;
+    top: 17px;
+    left: 550px;
+}
+
+#p1score {
+    color:white;
+    font-size: 80px;
+    top: 48px;
+    left: 697px;
+}
+
+#p1wl {
+    color:white;
+    font-size: 25px;
+    top: 13px;
+    left: 340px;
+}
+
+#p2name {
+    color:white;
+    font-size: 40px;
+    top: 60px;
+    left: 1250px;
+    white-space: nowrap;
+}
+
+#char2icon {
+    width: 50px;
+    top: 65px;
+    left: 1570px;
+}
+
+#p2pronouns {
+    color:white;
+    font-size: 20px;
+    top: 17px;
+    left: 1235px;
+}
+
+#p2score {
+    color:white;
+    font-size: 80px;
+    top: 48px;
+    left: 1120px;
+}
+
+#p2wl {
+    color:white;
+    font-size: 25px;
+    top: 13px;
+    left: 1500px;
+}
