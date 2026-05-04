@@ -1091,27 +1091,9 @@ function forceWLtoggles() {
 }
 
 function copyMatch() {
-
-    //initialize the string
-    let copiedText = document.getElementById('tournamentName').value + " " + roundInp.value + " - ";
-
-    if (p1TagInp.value) {
-        copiedText += p1TagInp.value + " | ";
-    }
-    copiedText += p1NameInp.value + " (" + charP1 + ") Vs. ";
-    if (p2TagInp.value) {
-        copiedText += p2TagInp.value + " | ";
-    }
-    copiedText += p2NameInp.value + " (" + charP2 + ")";
-    // } else {
-    //     if(tNameInps[0] == "" && tNameInps == ""){
-    //         copiedText += 
-    //     }
-    //     copiedText += tNameInps[0].value + " Vs " + tNameInps[1].value;
-    // }
-    // copiedText += " - " + roundInp.value + " - " + document.getElementById('tournamentName').value;
-
-    //send the string to the user's clipboard
+    const tournament = document.getElementById('tournamentName').value;
+    const round = roundInp.value;
+    const copiedText = `${tournament} ${round} - ${p1NameInp.value} (${charP1}) Vs ${p2NameInp.value} (${charP2}) - SSBU`;
     navigator.clipboard.writeText(copiedText);
 }
 
