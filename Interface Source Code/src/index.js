@@ -1,28 +1,47 @@
-const { app, globalShortcut, BrowserWindow } = require('electron');
+const { app, globalShortcut, BrowserWindow, ipcMain } = require('electron');
 const path = require('path');
 
 // start the web server
 const { serverReady } = require('./server');
+
+if (process.execPath.includes('node_modules')) {
+  require('electron-reload')(__dirname, {
+    electron: path.join(__dirname, '..', 'node_modules', '.bin', 'electron.cmd'),
+  });
+}
 
 // Handle creating/removing shortcuts on Windows when installing/uninstalling.
 if (require('electron-squirrel-startup')) { // eslint-disable-line global-require
   app.quit();
 }
 
-const createWindow = (port) => {
-  // 1. Define the base size that looks good on Windows
-  const baseWidth = 890;
-  const baseHeight = 340;
+let mainWindowRef = null;
+const BASE_WIDTH = 890;
+const BASE_HEIGHT = 335;
 
+ipcMain.on('set-always-on-top', (event, value) => {
+  mainWindowRef?.setAlwaysOnTop(value);
+});
+ipcMain.on('set-resizable', (event, value) => {
+  mainWindowRef?.setResizable(value);
+});
+ipcMain.on('restore-window-size', () => {
+  const isLinux = process.platform === 'linux';
+  const adj = isLinux ? 50 : 0;
+  mainWindowRef?.setMinimumSize(BASE_WIDTH + adj, BASE_HEIGHT + adj);
+  mainWindowRef?.setSize(BASE_WIDTH + adj, BASE_HEIGHT + adj);
+});
+
+const createWindow = (port) => {
   const isLinux = process.platform === 'linux';
   const adjustment = isLinux ? 50 : 0;
 
   const mainWindow = new BrowserWindow({
-    width: baseWidth + adjustment,
-    height: baseHeight + adjustment,
+    width: BASE_WIDTH + adjustment,
+    height: BASE_HEIGHT + adjustment,
     resizable: true,
-    minWidth: baseWidth + adjustment,
-    minHeight: baseHeight + adjustment,
+    minWidth: BASE_WIDTH + adjustment,
+    minHeight: BASE_HEIGHT + adjustment,
 
     webPreferences: {
       nodeIntegration: true,
@@ -31,15 +50,12 @@ const createWindow = (port) => {
     }
   });
 
-// mainWindow.webContents.openDevTools(); 
 
+
+  mainWindowRef = mainWindow;
 
   // we dont like menus
   mainWindow.removeMenu();
-
-
-
-  // mainWindow.setAlwaysOnTop(true);
 
   // load the index.html of the app.
   mainWindow.loadFile(path.join(__dirname, 'index.html'), { query: { port: String(port) } });
@@ -52,6 +68,14 @@ app.commandLine.appendSwitch('ozone-platform-hint', 'auto');
 // Some APIs can only be used after this event occurs.
 app.on('ready', () => {
   serverReady.then(port => createWindow(port));
+  globalShortcut.register('CommandOrControl+Shift+I', () => {
+    const win = BrowserWindow.getFocusedWindow();
+    if (win) win.webContents.toggleDevTools();
+  });
+  globalShortcut.register('CommandOrControl+F5', () => {
+    const win = BrowserWindow.getFocusedWindow();
+    if (win) win.webContents.reloadIgnoringCache();
+  });
 });
 
 // Quit when all windows are closed.

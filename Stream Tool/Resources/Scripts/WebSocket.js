@@ -24,8 +24,8 @@ window.initWebsocket = function(channel, callback) {
 
         callback({
             player: [
-                { char: json.p1Character, tag: json.p1Team,  name: json.p1Name, pronouns: json.p1Pron },
-                { char: json.p2Character, tag: json.p2Team,  name: json.p2Name, pronouns: json.p2Pron }
+                { char: json.p1Character, tag: json.p1Team,  name: json.p1Name, pronouns: json.p1Pron, seed: json.p1Seed || "", country: json.p1Country || "" },
+                { char: json.p2Character, tag: json.p2Team,  name: json.p2Name, pronouns: json.p2Pron, seed: json.p2Seed || "", country: json.p2Country || "" }
             ],
             score: [json.p1NScore, json.p2NScore],
             round:  json.round  || "",

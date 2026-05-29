@@ -29,11 +29,22 @@ const iconPath = path.resolve(resourcesPath, 'Characters', 'Stock Icons');
 
 console.log("Server Base Dir:", baseDir);
 
+function readAppProperties() {
+    const propsPath = path.join(baseDir, 'Resources', 'app.properties.txt');
+    try {
+        const content = fs.readFileSync(propsPath, 'utf8');
+        const match = content.match(/startgg\.apiKey\s*=\s*(.+)/);
+        return match ? match[1].trim() : null;
+    } catch { return null; }
+}
+
 const blankScoreboard = {
     p1Name: "", p1Team: "", p1Pron: "", p1NScore: "0",
     p1Character: "Random", p1Skin: "1", p1Color: "Red", p1WL: "",
+    p1Seed: "", p1Country: "",
     p2Name: "", p2Team: "", p2Pron: "", p2NScore: "0",
     p2Character: "Random", p2Skin: "1", p2Color: "Blue", p2WL: "",
+    p2Seed: "", p2Country: "",
     bestOf: "Bo3", round: "", format: "0", tournamentName: "",
     caster1Name: "", caster1Twitter: "", caster1Twitch: "",
     caster2Name: "", caster2Twitter: "", caster2Twitch: "",
@@ -81,36 +92,41 @@ app.post('/api/scoreboard', (req, res) => {
 
         fs.writeFileSync(path.join(mainPath, "ScoreboardInfo.json"), data);
 
-        fs.writeFileSync(path.join(mainPath, "Simple Texts", "Player 1.txt"), scoreboardJson.p1Name || "");
-        fs.writeFileSync(mainPath + "/Simple Texts/Player 1 Pronouns.txt", scoreboardJson.p1Pron || "");
-        fs.writeFileSync(mainPath + "/Simple Texts/Player 1 Tag.txt", scoreboardJson.p1Team);
-        fs.writeFileSync(mainPath + "/Simple Texts/Player 1 Character.txt", scoreboardJson.p1Character);
-        fs.writeFileSync(mainPath + "/Simple Texts/Left Winnerslosers.txt", scoreboardJson.p1WL || "");
+        if (scoreboardJson.writeSimpleTexts !== false) {
+            fs.writeFileSync(path.join(mainPath, "Simple Texts", "Player 1.txt"), scoreboardJson.p1Name || "");
+            fs.writeFileSync(mainPath + "/Simple Texts/Player 1 Pronouns.txt", scoreboardJson.p1Pron || "");
+            fs.writeFileSync(mainPath + "/Simple Texts/Player 1 Tag.txt", scoreboardJson.p1Team);
+            fs.writeFileSync(mainPath + "/Simple Texts/Player 1 Character.txt", scoreboardJson.p1Character);
+            fs.writeFileSync(mainPath + "/Simple Texts/Left Winnerslosers.txt", scoreboardJson.p1WL || "");
 
-        fs.writeFileSync(path.join(mainPath, "Simple Texts", "Player 2.txt"), scoreboardJson.p2Name || "");
-        fs.writeFileSync(mainPath + "/Simple Texts/Player 2 Pronouns.txt", scoreboardJson.p2Pron || "");
-        fs.writeFileSync(mainPath + "/Simple Texts/Player 2 Tag.txt", scoreboardJson.p2Team);
-        fs.writeFileSync(mainPath + "/Simple Texts/Player 2 Character.txt", scoreboardJson.p2Character);
-        fs.writeFileSync(mainPath + "/Simple Texts/Right Winnerslosers.txt", scoreboardJson.p2WL || "");
+            fs.writeFileSync(path.join(mainPath, "Simple Texts", "Player 2.txt"), scoreboardJson.p2Name || "");
+            fs.writeFileSync(mainPath + "/Simple Texts/Player 2 Pronouns.txt", scoreboardJson.p2Pron || "");
+            fs.writeFileSync(mainPath + "/Simple Texts/Player 2 Tag.txt", scoreboardJson.p2Team);
+            fs.writeFileSync(mainPath + "/Simple Texts/Player 2 Character.txt", scoreboardJson.p2Character);
+            fs.writeFileSync(mainPath + "/Simple Texts/Right Winnerslosers.txt", scoreboardJson.p2WL || "");
 
-        fs.writeFileSync(path.join(mainPath, "Simple Texts", "Score 1.txt"), scoreboardJson.p1NScore || "0");
-        fs.writeFileSync(path.join(mainPath, "Simple Texts", "Score 2.txt"), scoreboardJson.p2NScore || "0");
+            fs.writeFileSync(path.join(mainPath, "Simple Texts", "Score 1.txt"), scoreboardJson.p1NScore || "0");
+            fs.writeFileSync(path.join(mainPath, "Simple Texts", "Score 2.txt"), scoreboardJson.p2NScore || "0");
 
-        fs.writeFileSync(path.join(mainPath, "Simple Texts", "Round.txt"), scoreboardJson.round || "");
-        fs.writeFileSync(path.join(mainPath, "Simple Texts", "Format.txt"), scoreboardJson.format || "");
-        fs.writeFileSync(path.join(mainPath, "Simple Texts", "bestOf.txt"), scoreboardJson.bestOf || "");
-        fs.writeFileSync(path.join(mainPath, "Simple Texts", "Tournament Name.txt"), scoreboardJson.tournamentName || "");
+            fs.writeFileSync(path.join(mainPath, "Simple Texts", "Round.txt"), scoreboardJson.round || "");
+            fs.writeFileSync(path.join(mainPath, "Simple Texts", "Format.txt"), scoreboardJson.format || "");
+            fs.writeFileSync(path.join(mainPath, "Simple Texts", "bestOf.txt"), scoreboardJson.bestOf || "");
+            fs.writeFileSync(path.join(mainPath, "Simple Texts", "Tournament Name.txt"), scoreboardJson.tournamentName || "");
 
-        fs.writeFileSync(path.join(mainPath, "Simple Texts", "Caster 1 Name.txt"), scoreboardJson.caster1Name || "");
-        fs.writeFileSync(path.join(mainPath, "Simple Texts", "Caster 1 Twitter.txt"), scoreboardJson.caster1Twitter || "");
-        fs.writeFileSync(path.join(mainPath, "Simple Texts", "Caster 1 Twitch.txt"), scoreboardJson.caster1Twitch || "");
+            for (let cn = 1; scoreboardJson[`caster${cn}Name`] !== undefined && cn <= 10; cn++) {
+                fs.writeFileSync(path.join(mainPath, "Simple Texts", `Caster ${cn} Name.txt`),    scoreboardJson[`caster${cn}Name`]    || "");
+                fs.writeFileSync(path.join(mainPath, "Simple Texts", `Caster ${cn} Twitter.txt`), scoreboardJson[`caster${cn}Twitter`] || "");
+                fs.writeFileSync(path.join(mainPath, "Simple Texts", `Caster ${cn} Twitch.txt`),  scoreboardJson[`caster${cn}Twitch`]  || "");
+            }
 
-        fs.writeFileSync(path.join(mainPath, "Simple Texts", "Caster 2 Name.txt"), scoreboardJson.caster2Name || "");
-        fs.writeFileSync(path.join(mainPath, "Simple Texts", "Caster 2 Twitter.txt"), scoreboardJson.caster2Twitter || "");
-        fs.writeFileSync(path.join(mainPath, "Simple Texts", "Caster 2 Twitch.txt"), scoreboardJson.caster2Twitch || "");
+            fs.writeFileSync(path.join(mainPath, "Simple Texts", "Player 1 Seed.txt"), scoreboardJson.p1Seed || "");
+            fs.writeFileSync(path.join(mainPath, "Simple Texts", "Player 2 Seed.txt"), scoreboardJson.p2Seed || "");
+            fs.writeFileSync(path.join(mainPath, "Simple Texts", "Player 1 Country.txt"), scoreboardJson.p1Country || "");
+            fs.writeFileSync(path.join(mainPath, "Simple Texts", "Player 2 Country.txt"), scoreboardJson.p2Country || "");
 
-        fs.copyFileSync(iconPath + "/" + scoreboardJson.p1Character + "/1.png", mainPath + "/Simple Texts/Player 1 Character Icon/1.png");
-        fs.copyFileSync(iconPath + "/" + scoreboardJson.p2Character + "/1.png", mainPath + "/Simple Texts/Player 2 Character Icon/1.png");
+            fs.copyFileSync(iconPath + "/" + scoreboardJson.p1Character + "/1.png", mainPath + "/Simple Texts/Player 1 Character Icon/1.png");
+            fs.copyFileSync(iconPath + "/" + scoreboardJson.p2Character + "/1.png", mainPath + "/Simple Texts/Player 2 Character Icon/1.png");
+        }
 
         lastUpdateTimestamp = Date.now();
 
@@ -119,6 +135,45 @@ app.post('/api/scoreboard', (req, res) => {
     } catch (error) {
         console.error("Error writing scoreboard:", error);
         res.status(500).send('Error writing scoreboard');
+    }
+});
+
+app.get('/api/startgg-key', (req, res) => {
+    const fileToken = readAppProperties();
+    res.json({ fromFile: !!fileToken, hasKey: !!fileToken });
+});
+
+app.post('/api/startgg', async (req, res) => {
+    const { slug, page = 1, perPage = 200, token: bodyToken } = req.body;
+    const token = readAppProperties() || bodyToken;
+    if (!token) return res.status(400).json({ error: 'No API key set. Enter your start.gg token in Settings.' });
+
+    const query = `query($slug: String, $page: Int, $perPage: Int) {
+        event(slug: $slug) {
+            entrants(query: { page: $page, perPage: $perPage }) {
+                pageInfo { totalPages }
+                nodes {
+                    initialSeedNum
+                    participants { gamerTag prefix user { location { country } } }
+                }
+            }
+        }
+    }`;
+
+    try {
+        const response = await fetch('https://api.start.gg/gql/alpha', {
+            method: 'POST',
+            headers: {
+                'Authorization': `Bearer ${token}`,
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ query, variables: { slug, page, perPage } })
+        });
+        const json = await response.json();
+        res.json(json);
+    } catch (error) {
+        console.error("start.gg fetch error:", error);
+        res.status(500).json({ error: error.message });
     }
 });
 

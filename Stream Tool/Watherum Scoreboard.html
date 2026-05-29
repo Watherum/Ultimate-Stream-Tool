@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <title>Capital Region Scoreboard</title>
-    <link rel="stylesheet" href="Resources/Wath Scoreboard.css">
+    <link rel="stylesheet" href="Resources/CSS/Wath Scoreboard.css">
 </head>
 
 <body>
@@ -13,11 +13,15 @@
       <img id="char1icon" src="" alt=""/>
       <img id="char2icon" src="" alt=""/>
 
+      <img id="p1flag" class="playerFlag" src="" alt="">
+      <span id="p1seed"></span>
       <span id="p1name"><span class="tag"></span><span class="name"></span></span>
       <span id="p1pronouns"></span>
       <span id="p1score"></span>
       <span id="p1wl"></span>
 
+      <img id="p2flag" class="playerFlag" src="" alt="">
+      <span id="p2seed"></span>
       <span id="p2name"><span class="tag"></span><span class="name"></span></span>
       <span id="p2pronouns"></span>
       <span id="p2score"></span>
@@ -48,6 +52,29 @@
         const p1wl = document.getElementById("p1wl");
         const p2wl = document.getElementById("p2wl");
 
+        const p1flag = document.getElementById("p1flag");
+        const p2flag = document.getElementById("p2flag");
+        const p1seed = document.getElementById("p1seed");
+        const p2seed = document.getElementById("p2seed");
+
+        let COUNTRY_CODES_BY_NAME = null;
+        let lastData = null;
+
+        fetch("Resources/COUNTRY_CODES.json").then(r => r.json()).then(data => {
+            COUNTRY_CODES_BY_NAME = Object.fromEntries(
+                Object.entries(data).map(([code, name]) => [name, code])
+            );
+            if (lastData) render(lastData);
+        });
+
+        document.fonts.ready.then(() => { if (lastData) render(lastData); });
+
+        function setFlag(imgEl, countryName) {
+            const code = COUNTRY_CODES_BY_NAME?.[countryName];
+            if (code) { imgEl.src = `Resources/Flags/${code}.png`; imgEl.style.display = ""; }
+            else imgEl.style.display = "none";
+        }
+
         function fitText(el, maxWidth, maxSize = 40) {
             el.style.fontSize = maxSize + "px";
             while (el.scrollWidth > maxWidth && parseFloat(el.style.fontSize) > 8) {
@@ -55,7 +82,7 @@
             }
         }
 
-        initWebsocket("gameData", (data) => {
+        function render(data) {
             const p1 = data.player[0];
             const p2 = data.player[1];
 
@@ -74,6 +101,11 @@
             p1pronouns.textContent = p1.pronouns;
             p2pronouns.textContent = p2.pronouns;
 
+            setFlag(p1flag, p1.country);
+            setFlag(p2flag, p2.country);
+            p1seed.textContent = p1.seed ? `Seed ${p1.seed}` : "";
+            p2seed.textContent = p2.seed ? `Seed ${p2.seed}` : "";
+
             p1score.textContent = data.score[0];
             p2score.textContent = data.score[1];
 
@@ -83,6 +115,11 @@
 
             p1wl.textContent = data.wl[0];
             p2wl.textContent = data.wl[1];
+        }
+
+        initWebsocket("gameData", (data) => {
+            lastData = data;
+            render(data);
         });
     </script>
 

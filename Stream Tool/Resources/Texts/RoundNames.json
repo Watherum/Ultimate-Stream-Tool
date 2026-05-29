@@ -1,0 +1,67 @@
+[
+    {
+        "name": "Winners Round",
+        "showNumber": true
+    },
+    {
+        "name": "Winners Pre-Top",
+        "showNumber": true
+    },
+    {
+        "name": "Winners Top",
+        "showNumber": true
+    },
+    {
+        "name": "Winners Quarters"
+    },
+    {
+        "name": "Winners Semis"
+    },
+    {
+        "name": "Winners Finals"
+    },
+    {
+        "name": "Losers Round",
+        "showNumber": true
+    },
+    {
+        "name": "Losers Pre-Top",
+        "showNumber": true
+    },
+    {
+        "name": "Losers Top",
+        "showNumber": true
+    },
+    {
+        "name": "Losers Quarters"
+    },
+    {
+        "name": "Losers Semis"
+    },
+    {
+        "name": "Losers Finals"
+    },
+    {
+        "name": "Grand Finals"
+    },
+    {
+        "name": "Grand Finals Reset"
+    },
+    {
+        "name": "True Finals"
+    },
+    {
+        "name": "First to",
+        "showNumber": true,
+        "forceFirstTo": "X"
+    },
+    {
+        "name": "Friendlies"
+    },
+    {
+        "name": "Money Match"
+    },
+    {
+        "name": "Exhibition Match"
+    }
+]

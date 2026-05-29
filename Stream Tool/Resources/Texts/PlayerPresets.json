@@ -12,5 +12,125 @@
     "pronouns": "He/Him",
     "character": "Link",
     "skin": "1"
+  },
+  {
+    "name": "TESTO",
+    "tag": "TEST",
+    "pronouns": "AI",
+    "character": "Random",
+    "skin": ""
+  },
+  {
+    "name": "YOUUU",
+    "tag": "TEST",
+    "pronouns": "AI",
+    "character": "Random",
+    "skin": "1"
+  },
+  {
+    "name": "yes",
+    "tag": "C3F",
+    "pronouns": "da",
+    "character": "Random",
+    "skin": "1"
+  },
+  {
+    "name": "qwimm",
+    "tag": "",
+    "pronouns": "",
+    "character": "Random",
+    "skin": "1",
+    "seed": 8,
+    "country": "United States"
+  },
+  {
+    "name": "Average Alex",
+    "tag": "C2F",
+    "pronouns": "",
+    "character": "Random",
+    "skin": "1",
+    "seed": 1,
+    "country": "United States"
+  },
+  {
+    "name": "Tarzan",
+    "tag": "C2F",
+    "pronouns": "",
+    "character": "Random",
+    "skin": "1",
+    "seed": 5,
+    "country": "United States"
+  },
+  {
+    "name": "FruitMeatball",
+    "tag": "Asbestos",
+    "pronouns": "",
+    "character": "Random",
+    "skin": "1",
+    "seed": 3,
+    "country": "United States"
+  },
+  {
+    "name": "Chum",
+    "tag": "Asbestos",
+    "pronouns": "",
+    "character": "Random",
+    "skin": "1",
+    "seed": 4,
+    "country": "United States"
+  },
+  {
+    "name": "Cou",
+    "tag": "C2F",
+    "pronouns": "",
+    "character": "Random",
+    "skin": "1",
+    "seed": 11,
+    "country": "United States"
+  },
+  {
+    "name": "Grunk",
+    "tag": "C2F",
+    "pronouns": "",
+    "character": "Random",
+    "skin": "1",
+    "seed": 2,
+    "country": "United States"
+  },
+  {
+    "name": "Chopland Sedans",
+    "tag": "",
+    "pronouns": "",
+    "character": "Random",
+    "skin": "1",
+    "seed": 10,
+    "country": "United States"
+  },
+  {
+    "name": "NibbyNibbyNub",
+    "tag": "",
+    "pronouns": "",
+    "character": "Random",
+    "skin": "1",
+    "seed": 6,
+    "country": "United States"
+  },
+  {
+    "name": "Silver X",
+    "tag": "AWG",
+    "pronouns": "",
+    "character": "Random",
+    "skin": "1",
+    "seed": 9,
+    "country": "United States"
+  },
+  {
+    "name": "Sh-Awe",
+    "tag": "",
+    "pronouns": "",
+    "character": "Random",
+    "skin": "1",
+    "seed": 7,
+    "country": "United States"
   }
 ]

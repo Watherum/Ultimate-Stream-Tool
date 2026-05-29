@@ -37,8 +37,30 @@ Repeat from the 3rd step to add the `VS Screen.html` and `Caster Screen.html`, t
 
 ### Interface shortcuts!
 - Press `Enter` to update.
-- Press either `F1` or `F2` to increase P1's or P2's score.
 - Press `ESC` to clear player info.
+- Press `Ctrl+Shift+I` to open/close the developer tools.
+- Press `Ctrl+F5` to hard-reload the interface.
+
+#### Score hotkeys
+Score hotkeys are controlled by two mutually exclusive settings (checking one unchecks the other):
+
+**Update on score hotkeys** *(on by default)*
+| Shortcut | Action |
+|---|---|
+| `F1` | P1 score +1 |
+| `F2` | P2 score +1 |
+| `Shift+F1` | P1 score -1 |
+| `Shift+F2` | P2 score -1 |
+
+**Backwards hotkeys** — same keys, reversed direction:
+| Shortcut | Action |
+|---|---|
+| `F1` | P1 score -1 |
+| `F2` | P2 score -1 |
+| `Shift+F1` | P1 score +1 |
+| `Shift+F2` | P2 score +1 |
+
+With neither setting checked, all score hotkeys are disabled.
 
 2 basic transitions are included in the `Resources/OBS Transitions` folder, if you don't have a transition yourself of course. To use them on OBS:
 - Add a new stinger transition.
@@ -49,6 +71,56 @@ Repeat from the 3rd step to add the `VS Screen.html` and `Caster Screen.html`, t
 
 The interface will also update basic text files with the match info at `Resources/Texts/Simple Texts/` so you can add them to OBS with ease.
 
+
+---
+
+## Player Flags & Seeds
+
+Each player slot has two extra fields alongside their name:
+
+- **Seed** — the player's tournament seeding number.
+- **Country** — the player's country (full name, e.g. `United States`). A flag preview is shown next to the field.
+
+Both fields are included when saving/loading player presets and are cleared alongside the rest of the player info when using the clear button.
+
+The overlay (`Watherum Scoreboard.html`) reads these values and displays the corresponding flag image and seed number on the 1920×1080 canvas.
+
+### start.gg Import
+
+The settings panel includes a **start.gg Import** section that can bulk-populate player data directly from a tournament bracket:
+
+1. Enter your start.gg API token (or add it to `Resources/app.properties.txt` as `startgg.apiKey=your_token_here` to have it load automatically on startup).
+2. Enter the tournament event slug in the format `tournament/your-tournament-name/event/your-event-name` (e.g. `tournament/genesis-10/event/ultimate-singles`).
+3. Click **Fetch Data**.
+
+On a successful fetch the tool pages through all entrants (200 at a time) and upserts them all into your local player presets — updating tag, seed, and country for existing presets while preserving character/skin/pronoun data, and creating a new preset for any player not already saved. A status line reports how many players were found and how many were new vs. updated.
+
+Once fetched, typing a player name into either name field will automatically fill in their tag, seed, and country if they appear in the imported data.
+
+---
+
+## Round Names
+
+The round field supports two modes, switchable via **Use custom round** in Settings (off by default):
+
+**Preset mode** (default) — a dropdown populated from `Resources/Texts/RoundNames.json`:
+- Winners bracket: Winners Round, Winners Pre-Top, Winners Top, Winners Quarters, Winners Semis, Winners Finals
+- Losers bracket: Losers Round, Losers Pre-Top, Losers Top, Losers Quarters, Losers Semis, Losers Finals
+- Finals: Grand Finals, Grand Finals Reset, True Finals
+- Other: First to, Friendlies, Money Match, Exhibition Match
+
+Rounds marked with a number (e.g. "Winners Round", "Losers Top") show a small number input next to the dropdown — the composed value written to the scoreboard is `Round Name <number>` (e.g. `Winners Round 4`).
+
+Selecting **First to** automatically switches the Best Of mode to **First to X**.
+
+**Custom mode** — the round field becomes a free text input, same as before.
+
+**Abbreviate round names** (on by default) — when enabled, abbreviates the output: `Round` → `Rd`, `Quarters` → `Qrts`. Only affects the value written to the scoreboard, not the dropdown labels. Works in preset mode only.
+
+You can edit `RoundNames.json` to add, remove, or reorder entries. Each entry supports:
+- `"name"` — the display label and written value
+- `"showNumber": true` — show a number input alongside the dropdown
+- `"forceFirstTo": "X"` — switch the Best Of button to First to X when selected
 
 ---
 

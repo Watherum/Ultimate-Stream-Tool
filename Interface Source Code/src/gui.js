@@ -1,10 +1,11 @@
 const isElectron = typeof require !== 'undefined';
-let fs, path, os, baseDir;
+let fs, path, os, baseDir, ipcRenderer;
 
 if (isElectron) {
     fs = require('fs');
     path = require('path');
     os = require('os');
+    ({ ipcRenderer } = require('electron'));
 
     const isDev = process.execPath.includes('node_modules');
     if (isDev) {
@@ -46,6 +47,8 @@ let currentBestOf = "Bo3";
 let movedSettings = false;
 let charP1Active = false;
 let playerPresets = [];
+let startGGData = {};
+let countryCodes = null;
 
 
 const viewport = document.getElementById('viewport');
@@ -66,11 +69,104 @@ const p1L = document.getElementById('p1L');
 const p2W = document.getElementById('p2W');
 const p2L = document.getElementById('p2L');
 
+const p1SeedInp    = document.getElementById('p1Seed');
+const p1CountryInp = document.getElementById('p1Country');
+const p1FlagImg    = document.getElementById('p1Flag');
+const p2SeedInp    = document.getElementById('p2Seed');
+const p2CountryInp = document.getElementById('p2Country');
+const p2FlagImg    = document.getElementById('p2Flag');
+
 const roundInp = document.getElementById('roundName');
+const roundSelect = document.getElementById('roundSelect');
+const roundNumberInp = document.getElementById('roundNumber');
+const useCustomRound = document.getElementById('useCustomRound');
 const formatInp = document.getElementById('format');
 
 const forceWL = document.getElementById('forceWLToggle');
 
+let roundNames = [];
+
+let casterCount = 0;
+
+const MIC_SVG = `<svg viewBox="0 0 261.075 261.075" xmlns="http://www.w3.org/2000/svg"><path d="M126.855,174.05h5.744c22.447,0,40.641-18.194,40.641-40.641V40.641C173.24,18.194,155.046,0,132.599,0h-5.744c-22.447,0-40.641,18.194-40.641,40.641v92.769C86.215,155.856,104.408,174.05,126.855,174.05z"/><path d="M124.288,201.147v43.61H86.215c-4.504,0-8.159,3.65-8.159,8.159s3.655,8.159,8.159,8.159h92.464c4.504,0,8.159-3.65,8.159-8.159s-3.655-8.159-8.159-8.159h-38.073v-43.823c34.832-3.138,63.262-34.44,63.262-71.208c0-4.509-3.655-8.159-8.159-8.159s-8.159,3.65-8.159,8.159c0,29.92-24.122,55.201-52.672,55.201h-8.686c-28.544,0-52.666-24.699-52.666-53.939c0-4.509-3.655-8.159-8.159-8.159s-8.159,3.65-8.159,8.159C57.208,169.073,87.134,200.109,124.288,201.147z"/></svg>`;
+const TWITTER_SVG = `<svg class="casterIcon" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg"><path d="M18.258,3.266c-0.693,0.405-1.46,0.698-2.277,0.857c-0.653-0.686-1.586-1.115-2.618-1.115c-1.98,0-3.586,1.581-3.586,3.53c0,0.276,0.031,0.545,0.092,0.805C6.888,7.195,4.245,5.79,2.476,3.654C2.167,4.176,1.99,4.781,1.99,5.429c0,1.224,0.633,2.305,1.596,2.938C2.999,8.349,2.445,8.19,1.961,7.925C1.96,7.94,1.96,7.954,1.96,7.97c0,1.71,1.237,3.138,2.877,3.462c-0.301,0.08-0.617,0.123-0.945,0.123c-0.23,0-0.456-0.021-0.674-0.062c0.456,1.402,1.781,2.422,3.35,2.451c-1.228,0.947-2.773,1.512-4.454,1.512c-0.291,0-0.575-0.016-0.855-0.049c1.588,1,3.473,1.586,5.498,1.586c6.598,0,10.205-5.379,10.205-10.045c0-0.153-0.003-0.305-0.01-0.456c0.7-0.499,1.308-1.12,1.789-1.827c-0.644,0.28-1.334,0.469-2.06,0.555C17.422,4.782,17.99,4.091,18.258,3.266"/></svg>`;
+const TWITCH_SVG = `<svg class="casterIcon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="m.975 4.175v16.694h5.749v3.131h3.139l3.134-3.132h4.705l6.274-6.258v-14.61h-21.434zm3.658-2.09h17.252v11.479l-3.66 3.652h-5.751l-3.134 3.127v-3.127h-4.707z"/><path d="m10.385 6.262h2.09v6.26h-2.09z"/><path d="m16.133 6.262h2.091v6.26h-2.091z"/></svg>`;
+
+let activeCasterN = null;
+
+function openSocialModal(n) {
+    activeCasterN = n;
+    document.getElementById('casterSocialTitle').textContent = 'Caster ' + n + ' Socials';
+    document.getElementById('modalTwitter').value = document.getElementById('cTwitter' + n).value;
+    document.getElementById('modalTwitch').value  = document.getElementById('cTwitch' + n).value;
+    document.getElementById('casterSocialModal').classList.add('open');
+    document.getElementById('modalTwitter').focus();
+    document.querySelectorAll('.casterMicBtn').forEach(b => b.classList.remove('active'));
+    const row = document.querySelector(`.caster[data-n="${n}"]`);
+    if (row) row.querySelector('.casterMicBtn').classList.add('active');
+}
+
+function closeSocialModal() {
+    if (activeCasterN !== null) {
+        document.getElementById('cTwitter' + activeCasterN).value = document.getElementById('modalTwitter').value;
+        document.getElementById('cTwitch'  + activeCasterN).value = document.getElementById('modalTwitch').value;
+        const row = document.querySelector(`.caster[data-n="${activeCasterN}"]`);
+        if (row) row.querySelector('.casterMicBtn').classList.remove('active');
+        activeCasterN = null;
+    }
+    document.getElementById('casterSocialModal').classList.remove('open');
+}
+
+function createCasterRow(n) {
+    const casterInfo = document.getElementById('casterInfo');
+    const addBtn = document.getElementById('addCasterBtn');
+
+    const row = document.createElement('div');
+    row.className = 'caster';
+    row.dataset.n = n;
+
+    const micBtn = document.createElement('button');
+    micBtn.className = 'casterMicBtn mousetrap';
+    micBtn.title = 'Edit socials';
+    micBtn.innerHTML = MIC_SVG;
+    micBtn.addEventListener('click', () => openSocialModal(n));
+
+    const nameInput = document.createElement('input');
+    nameInput.type = 'text';
+    nameInput.id = 'cName' + n;
+    nameInput.className = 'cName textInput mousetrap';
+    nameInput.placeholder = 'Caster ' + n + ' name';
+    nameInput.spellcheck = false;
+
+    const removeBtn = document.createElement('button');
+    removeBtn.className = 'casterRemoveBtn';
+    removeBtn.title = 'Remove caster';
+    removeBtn.textContent = '−';
+    removeBtn.addEventListener('click', () => {
+        if (activeCasterN === n) closeSocialModal();
+        row.remove();
+    });
+
+    // Hidden inputs hold twitter/twitch data; modal reads/writes these
+    const hiddenTwitter = document.createElement('input');
+    hiddenTwitter.type = 'text';
+    hiddenTwitter.id = 'cTwitter' + n;
+    hiddenTwitter.style.display = 'none';
+
+    const hiddenTwitch = document.createElement('input');
+    hiddenTwitch.type = 'text';
+    hiddenTwitch.id = 'cTwitch' + n;
+    hiddenTwitch.style.display = 'none';
+
+    row.appendChild(micBtn);
+    row.appendChild(nameInput);
+    row.appendChild(removeBtn);
+    row.appendChild(hiddenTwitter);
+    row.appendChild(hiddenTwitch);
+
+    casterInfo.insertBefore(row, addBtn);
+    casterCount = Math.max(casterCount, n);
+}
 
 async function init() {
 
@@ -78,6 +174,17 @@ async function init() {
     document.getElementById('updateRegion').addEventListener("click", writeScoreboard);
     document.getElementById('settingsRegion').addEventListener("click", moveViewport);
     document.getElementById('closeSettings').addEventListener("click", goBack);
+
+    createCasterRow(1);
+    createCasterRow(2);
+    document.getElementById('addCasterBtn').addEventListener('click', () => createCasterRow(casterCount + 1));
+    document.getElementById('casterSocialClose').addEventListener('click', closeSocialModal);
+    document.getElementById('casterSocialBackdrop').addEventListener('click', closeSocialModal);
+    document.getElementById('casterSocialUpdate').addEventListener('click', () => { closeSocialModal(); writeScoreboard(); });
+    document.getElementById('casterSocialModal').addEventListener('keydown', e => {
+        if (e.key === 'Escape') closeSocialModal();
+        if (e.key === 'Enter') { closeSocialModal(); writeScoreboard(); }
+    });
 
     //if the viewport is moved, click anywhere on the center to go back
     document.getElementById('goBack').addEventListener("click", goBack);
@@ -136,6 +243,7 @@ async function init() {
     });
 
 
+    await loadCountryCodes();
     await loadSavedData();
 
     //set click listeners for the [W] and [L] buttons
@@ -153,10 +261,12 @@ async function init() {
     p1NameInp.addEventListener("change", () => {
         p1NScoreInp.value = "0";
         changeInputWidth(p1NScoreInp);
+        applyStartGGToPlayer(p1NameInp.value, p1SeedInp, p1CountryInp, p1TagInp, p1FlagImg);
     });
     p2NameInp.addEventListener("change", () => {
         p2NScoreInp.value = "0";
         changeInputWidth(p2NScoreInp);
+        applyStartGGToPlayer(p2NameInp.value, p2SeedInp, p2CountryInp, p2TagInp, p2FlagImg);
     });
 
     //preset save buttons
@@ -204,6 +314,49 @@ async function init() {
     //check if the round is grand finals
     roundInp.addEventListener("input", checkRound);
 
+    // useCustomRound setting
+    const savedCustomRound = localStorage.getItem('useCustomRound');
+    if (savedCustomRound !== null) useCustomRound.checked = savedCustomRound === 'true';
+    useCustomRound.addEventListener('change', () => {
+        localStorage.setItem('useCustomRound', useCustomRound.checked);
+        applyRoundMode();
+    });
+
+    // abbreviateRounds setting
+    const abbreviateRoundsCheck = document.getElementById('abbreviateRounds');
+    const savedAbbreviate = localStorage.getItem('abbreviateRounds');
+    if (savedAbbreviate !== null) abbreviateRoundsCheck.checked = savedAbbreviate === 'true';
+    abbreviateRoundsCheck.addEventListener('change', () => {
+        localStorage.setItem('abbreviateRounds', abbreviateRoundsCheck.checked);
+    });
+    roundSelect.addEventListener('change', () => {
+        updateRoundNumberVisibility();
+        checkRound();
+        const selected = roundNames.find(o => o.name === roundSelect.value);
+        if (selected?.forceFirstTo) {
+            currentBestOf = "FtX";
+            applyBestOf();
+        }
+    });
+
+    // load predefined round names
+    fetch(API_BASE + '/api/json/RoundNames')
+        .then(r => r.json())
+        .then(data => {
+            roundNames = data;
+            data.forEach(entry => {
+                const opt = document.createElement('option');
+                opt.value = entry.name;
+                opt.textContent = entry.name;
+                roundSelect.appendChild(opt);
+            });
+            applyRoundMode();
+        })
+        .catch(() => {
+            useCustomRound.checked = true;
+            applyRoundMode();
+        });
+
 
     //add a listener to the swap button
     document.getElementById('swapButton').addEventListener("click", swap);
@@ -216,7 +369,53 @@ async function init() {
     //set a listener for the forceWL check
     forceWL.addEventListener("click", forceWLtoggles);
 
+    const scoreHotkeys = document.getElementById('scoreHotkeysToggle');
+    const backwardsHotkeys = document.getElementById('backwardsHotkeysToggle');
+    scoreHotkeys.addEventListener('change', () => { if (scoreHotkeys.checked) backwardsHotkeys.checked = false; });
+    backwardsHotkeys.addEventListener('change', () => { if (backwardsHotkeys.checked) scoreHotkeys.checked = false; });
+
     document.getElementById("copyMatch").addEventListener("click", copyMatch);
+
+    const alwaysOnTopCheck = document.getElementById('alwaysOnTop');
+    alwaysOnTopCheck.addEventListener('change', () => {
+        ipcRenderer.send('set-always-on-top', alwaysOnTopCheck.checked);
+    });
+
+    const resizableCheck = document.getElementById('resizableToggle');
+    resizableCheck.addEventListener('change', () => {
+        ipcRenderer.send('set-resizable', resizableCheck.checked);
+    });
+
+    document.getElementById('restoreWindowSize').addEventListener('click', () => {
+        ipcRenderer.send('restore-window-size');
+    });
+
+    document.getElementById('startggFetch').addEventListener('click', fetchStartGG);
+    p1CountryInp.addEventListener('input', () => updateFlagPreview(p1CountryInp.value, p1FlagImg));
+    p2CountryInp.addEventListener('input', () => updateFlagPreview(p2CountryInp.value, p2FlagImg));
+
+    // check if API key is pre-loaded from app.properties.txt
+    try {
+        const keyStatus = await fetch(API_BASE + '/api/startgg-key').then(r => r.json());
+        const tokenInp = document.getElementById('startggToken');
+        const tokenStatus = document.getElementById('startggTokenStatus');
+        if (keyStatus.fromFile) {
+            tokenInp.value = '';
+            tokenInp.placeholder = '••••••••••••••••';
+            tokenInp.disabled = true;
+            tokenStatus.textContent = '✓ Loaded from app.properties.txt';
+            tokenStatus.style.color = 'var(--selected)';
+        }
+    } catch {}
+
+    document.getElementById("openRemote").addEventListener("click", () => {
+        const url = `http://localhost:${serverPort}`;
+        if (isElectron) {
+            require('electron').shell.openExternal(url);
+        } else {
+            window.open(url, '_blank');
+        }
+    });
 
     // document.getElementById("alwaysOnTop").addEventListener("click", alwaysOnTop);
 
@@ -242,8 +441,22 @@ async function init() {
         }
     });
 
-    Mousetrap.bind('f1', () => { giveWinP1() });
-    Mousetrap.bind('f2', () => { giveWinP2() });
+    Mousetrap.bind('f1', () => {
+        if (document.getElementById('scoreHotkeysToggle').checked) giveWinP1();
+        else if (document.getElementById('backwardsHotkeysToggle').checked) takeWinP1();
+    });
+    Mousetrap.bind('f2', () => {
+        if (document.getElementById('scoreHotkeysToggle').checked) giveWinP2();
+        else if (document.getElementById('backwardsHotkeysToggle').checked) takeWinP2();
+    });
+    Mousetrap.bind('shift+f1', () => {
+        if (document.getElementById('scoreHotkeysToggle').checked) takeWinP1();
+        else if (document.getElementById('backwardsHotkeysToggle').checked) giveWinP1();
+    });
+    Mousetrap.bind('shift+f2', () => {
+        if (document.getElementById('scoreHotkeysToggle').checked) takeWinP2();
+        else if (document.getElementById('backwardsHotkeysToggle').checked) giveWinP2();
+    });
 
     // display IP addresses if in Electron
     if (isElectron) {
@@ -370,17 +583,34 @@ async function loadSavedData() {
         colorP2 = data.p2Color || "Blue";
         currentP2WL = data.p2WL || "";
 
+        if (p1SeedInp)    p1SeedInp.value    = data.p1Seed    || "";
+        if (p1CountryInp) { p1CountryInp.value = data.p1Country || ""; updateFlagPreview(data.p1Country || "", p1FlagImg); }
+        if (p2SeedInp)    p2SeedInp.value    = data.p2Seed    || "";
+        if (p2CountryInp) { p2CountryInp.value = data.p2Country || ""; updateFlagPreview(data.p2Country || "", p2FlagImg); }
+
         currentBestOf = data.bestOf || "Bo3";
-        roundInp.value = data.round || roundInp.value;
+        if (data.round) {
+            const matched = roundNames.find(o => {
+                if (o.showNumber) return data.round.startsWith(o.name + ' ');
+                return data.round === o.name;
+            });
+            if (!useCustomRound.checked && matched) {
+                roundSelect.value = matched.name;
+                if (matched.showNumber) roundNumberInp.value = data.round.slice(matched.name.length + 1);
+                updateRoundNumberVisibility();
+            } else {
+                roundInp.value = data.round;
+            }
+        }
         formatInp.value = data.format || formatInp.value;
 
         document.getElementById('tournamentName').value = data.tournamentName || "";
-        document.getElementById('cName1').value = data.caster1Name || "";
-        document.getElementById('cTwitter1').value = data.caster1Twitter || "";
-        document.getElementById('cTwitch1').value = data.caster1Twitch || "";
-        document.getElementById('cName2').value = data.caster2Name || "";
-        document.getElementById('cTwitter2').value = data.caster2Twitter || "";
-        document.getElementById('cTwitch2').value = data.caster2Twitch || "";
+        for (let cn = 1; data[`caster${cn}Name`] !== undefined; cn++) {
+            if (cn > casterCount) createCasterRow(cn);
+            document.getElementById(`cName${cn}`).value    = data[`caster${cn}Name`]    || "";
+            document.getElementById(`cTwitter${cn}`).value = data[`caster${cn}Twitter`] || "";
+            document.getElementById(`cTwitch${cn}`).value  = data[`caster${cn}Twitch`]  || "";
+        }
 
         document.getElementById('allowIntro').checked = data.allowIntro || false;
 
@@ -746,13 +976,19 @@ function changeSkinP2() {
 }
 
 
-//gives a victory to player 1 
+//gives a victory to player 1
 function giveWinP1() {
     p1NScoreInp.value = Number(p1NScoreInp.value) + 1;
 }
 //same with P2
 function giveWinP2() {
     p2NScoreInp.value = Number(p2NScoreInp.value) + 1;
+}
+function takeWinP1() {
+    p1NScoreInp.value = Math.max(0, Number(p1NScoreInp.value) - 1);
+}
+function takeWinP2() {
+    p2NScoreInp.value = Math.max(0, Number(p2NScoreInp.value) - 1);
 }
 
 
@@ -850,11 +1086,43 @@ function applyBestOf() {
 }
 
 
+function abbreviateRound(str) {
+    if (!document.getElementById('abbreviateRounds')?.checked) return str;
+    return str.replace(/\bRound\b/g, 'Rd').replace(/\bQuarters\b/g, 'Qrts');
+}
+
+function getRoundValue() {
+    if (useCustomRound.checked) return roundInp.value;
+    const selected = roundNames.find(o => o.name === roundSelect.value);
+    let value;
+    if (selected?.showNumber && roundNumberInp.value) {
+        value = `${roundSelect.value} ${roundNumberInp.value}`;
+    } else {
+        value = roundSelect.value || '';
+    }
+    return abbreviateRound(value);
+}
+
+function applyRoundMode() {
+    const custom = useCustomRound.checked;
+    roundInp.style.display = custom ? '' : 'none';
+    roundSelect.style.display = custom ? 'none' : '';
+    updateRoundNumberVisibility();
+    checkRound();
+}
+
+function updateRoundNumberVisibility() {
+    const selected = roundNames.find(o => o.name === roundSelect.value);
+    const shouldShow = !useCustomRound.checked && selected?.showNumber;
+    roundNumberInp.style.display = shouldShow ? '' : 'none';
+    if (shouldShow && !roundNumberInp.value) roundNumberInp.value = "1";
+}
+
 function checkRound() {
     if (!forceWL.checked) {
         const wlButtons = document.getElementsByClassName("wlButtons");
 
-        if (roundInp.value.toLocaleUpperCase().includes("Grand".toLocaleUpperCase())) {
+        if (getRoundValue().toLocaleUpperCase().includes("Grand".toLocaleUpperCase())) {
             for (let i = 0; i < wlButtons.length; i++) {
                 wlButtons[i].style.display = "inline";
             }
@@ -872,19 +1140,29 @@ function swap() {
     let tempP1Team = p1TagInp.value;
     let tempP1Pron = p1PronInp.value;
     let tempP1NScore = p1NScoreInp.value;
+    let tempP1Seed = p1SeedInp.value;
+    let tempP1Country = p1CountryInp.value;
     let tempP2Name = p2NameInp.value;
     let tempP2Team = p2TagInp.value;
     let tempP2Pron = p2PronInp.value;
     let tempP2NScore = p2NScoreInp.value;
+    let tempP2Seed = p2SeedInp.value;
+    let tempP2Country = p2CountryInp.value;
 
     p1NameInp.value = tempP2Name;
     p1TagInp.value = tempP2Team;
     p1PronInp.value = tempP2Pron;
     p1NScoreInp.value = tempP2NScore;
+    p1SeedInp.value = tempP2Seed;
+    p1CountryInp.value = tempP2Country;
+    updateFlagPreview(tempP2Country, p1FlagImg);
     p2NameInp.value = tempP1Name;
     p2TagInp.value = tempP1Team;
     p2PronInp.value = tempP1Pron;
     p2NScoreInp.value = tempP1NScore;
+    p2SeedInp.value = tempP1Seed;
+    p2CountryInp.value = tempP1Country;
+    updateFlagPreview(tempP1Country, p2FlagImg);
 
     changeInputWidth(p1NameInp);
     changeInputWidth(p1TagInp);
@@ -932,7 +1210,9 @@ async function savePreset(pNum) {
     await fetch(API_BASE + '/api/presets', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name, tag: tagInp.value, pronouns: pronInp.value, character, skin })
+        body: JSON.stringify({ name, tag: tagInp.value, pronouns: pronInp.value, character, skin,
+            seed: (pNum === 1 ? p1SeedInp : p2SeedInp).value,
+            country: (pNum === 1 ? p1CountryInp : p2CountryInp).value })
     });
     await loadPresets();
 }
@@ -1015,12 +1295,20 @@ function renderPresetList(query) {
 }
 
 function applyPreset(pNum, preset) {
-    const nameInp = pNum === 1 ? p1NameInp : p2NameInp;
-    const tagInp  = pNum === 1 ? p1TagInp  : p2TagInp;
-    const pronInp = pNum === 1 ? p1PronInp : p2PronInp;
-    nameInp.value = preset.name;
-    tagInp.value  = preset.tag || '';
-    pronInp.value = preset.pronouns || '';
+    const nameInp    = pNum === 1 ? p1NameInp    : p2NameInp;
+    const tagInp     = pNum === 1 ? p1TagInp     : p2TagInp;
+    const pronInp    = pNum === 1 ? p1PronInp    : p2PronInp;
+    const seedInp    = pNum === 1 ? p1SeedInp    : p2SeedInp;
+    const countryInp = pNum === 1 ? p1CountryInp : p2CountryInp;
+    const flagImg    = pNum === 1 ? p1FlagImg    : p2FlagImg;
+
+    nameInp.value    = preset.name;
+    tagInp.value     = preset.tag || '';
+    pronInp.value    = preset.pronouns || '';
+    seedInp.value    = preset.seed || '';
+    countryInp.value = preset.country || '';
+    updateFlagPreview(preset.country || '', flagImg);
+
     changeInputWidth(nameInp);
     changeInputWidth(tagInp);
     changeInputWidth(pronInp);
@@ -1040,11 +1328,20 @@ function clearPlayers() {
     p1NameInp.value = "";
     p1PronInp.value = "";
     p1NScoreInp.value = "0";
+    p1SeedInp.value = "";
+    p1CountryInp.value = "";
+    p1FlagImg.style.display = 'none';
     p2TagInp.value = "";
     p2NameInp.value = "";
     p2PronInp.value = "";
     p2NScoreInp.value = "0";
+    p2SeedInp.value = "";
+    p2CountryInp.value = "";
+    p2FlagImg.style.display = 'none';
     roundInp.value = "";
+    roundSelect.selectedIndex = 0;
+    roundNumberInp.value = "";
+    updateRoundNumberVisibility();
     changeInputWidth(p1TagInp);
     changeInputWidth(p1NameInp);
     changeInputWidth(p1PronInp);
@@ -1090,19 +1387,103 @@ function forceWLtoggles() {
     }
 }
 
+async function loadCountryCodes() {
+    try {
+        const res = await fetch(API_BASE + '/Resources/COUNTRY_CODES.json');
+        countryCodes = await res.json();
+    } catch {}
+}
+
+function updateFlagPreview(countryName, flagImg) {
+    if (!countryCodes || !countryName) { flagImg.style.display = 'none'; return; }
+    const code = Object.keys(countryCodes).find(k =>
+        countryCodes[k].toLowerCase() === countryName.toLowerCase());
+    if (code) {
+        flagImg.src = API_BASE + '/Resources/Flags/' + code + '.png';
+        flagImg.style.display = 'inline';
+    } else {
+        flagImg.style.display = 'none';
+    }
+}
+
+function applyStartGGToPlayer(name, seedInp, countryInp, tagInp, flagImg) {
+    const d = startGGData[name.toLowerCase()];
+    if (!d) return;
+    if (d.seed)    seedInp.value    = d.seed;
+    if (d.country) { countryInp.value = d.country; updateFlagPreview(d.country, flagImg); }
+    if (d.tag)     tagInp.value     = d.tag;
+}
+
+async function fetchStartGG() {
+    const slug = document.getElementById('startggSlug').value.trim();
+    const token = document.getElementById('startggToken').value.trim();
+    const statusEl = document.getElementById('startggStatus');
+    const fetchBtn = document.getElementById('startggFetch');
+    if (!slug) return;
+    statusEl.textContent = 'Fetching…';
+    fetchBtn.disabled = true;
+    startGGData = {};
+    try {
+        let page = 1, totalPages = 1;
+        do {
+            const res = await fetch(API_BASE + '/api/startgg', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ slug, page, perPage: 200, token: token || undefined })
+            });
+            const json = await res.json();
+            const entrants = json.data?.event?.entrants;
+            if (!entrants) throw new Error(json.errors?.[0]?.message || 'Bad response — check slug');
+            totalPages = entrants.pageInfo.totalPages;
+            for (const node of entrants.nodes) {
+                const p = node.participants?.[0];
+                if (!p) continue;
+                startGGData[p.gamerTag.toLowerCase()] = {
+                    name:    p.gamerTag,
+                    seed:    node.initialSeedNum ?? "",
+                    country: p.user?.location?.country ?? "",
+                    tag:     p.prefix ?? ""
+                };
+            }
+            page++;
+        } while (page <= totalPages);
+
+        // upsert all fetched players into the preset list
+        statusEl.textContent = 'Saving presets…';
+        const existingPresets = await fetch(API_BASE + '/api/presets').then(r => r.json()).catch(() => []);
+        let newCount = 0, updatedCount = 0;
+        for (const d of Object.values(startGGData)) {
+            const existing = existingPresets.find(p => p.name.toLowerCase() === d.name.toLowerCase());
+            const preset = existing
+                ? { ...existing, tag: d.tag || existing.tag, seed: d.seed, country: d.country }
+                : { name: d.name, tag: d.tag || '', pronouns: '', character: 'Random', skin: '1', seed: d.seed, country: d.country };
+            await fetch(API_BASE + '/api/presets', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(preset)
+            });
+            if (existing) updatedCount++; else newCount++;
+        }
+        await loadPresets();
+        renderPresetList(document.getElementById('presetSearchInp').value);
+
+        const total = Object.keys(startGGData).length;
+        statusEl.textContent = `${total} players — ${newCount} new, ${updatedCount} updated`;
+        applyStartGGToPlayer(p1NameInp.value, p1SeedInp, p1CountryInp, p1TagInp, p1FlagImg);
+        applyStartGGToPlayer(p2NameInp.value, p2SeedInp, p2CountryInp, p2TagInp, p2FlagImg);
+    } catch (e) {
+        statusEl.textContent = 'Error: ' + e.message;
+    } finally {
+        fetchBtn.disabled = false;
+    }
+}
+
 function copyMatch() {
     const tournament = document.getElementById('tournamentName').value;
-    const round = roundInp.value;
+    const round = getRoundValue();
     const copiedText = `${tournament} ${round} - ${p1NameInp.value} (${charP1}) Vs ${p2NameInp.value} (${charP2}) - SSBU`;
     navigator.clipboard.writeText(copiedText);
 }
-
-
-// sends the signal to electron to activate always on top
-// function alwaysOnTop() {
-//     ipc.send('alwaysOnTop', this.checked);
-//     saveGUISettings();
-// }
 
 
 //time to write it down
@@ -1117,6 +1498,8 @@ async function writeScoreboard() {
         p1Skin: skinP1,
         p1Color: colorP1,
         p1WL: currentP1WL,
+        p1Seed: p1SeedInp.value,
+        p1Country: p1CountryInp.value,
         p2Name: p2NameInp.value,
         p2Team: p2TagInp.value,
         p2Pron: p2PronInp.value,
@@ -1125,18 +1508,25 @@ async function writeScoreboard() {
         p2Skin: skinP2,
         p2Color: colorP2,
         p2WL: currentP2WL,
+        p2Seed: p2SeedInp.value,
+        p2Country: p2CountryInp.value,
         bestOf: currentBestOf,
-        round: roundInp.value,
+        round: getRoundValue(),
         format: formatInp.value,
         tournamentName: document.getElementById('tournamentName').value,
-        caster1Name: document.getElementById('cName1').value,
-        caster1Twitter: document.getElementById('cTwitter1').value,
-        caster1Twitch: document.getElementById('cTwitch1').value,
-        caster2Name: document.getElementById('cName2').value,
-        caster2Twitter: document.getElementById('cTwitter2').value,
-        caster2Twitch: document.getElementById('cTwitch2').value,
+        ...(() => {
+            const c = {};
+            document.querySelectorAll('#casterInfo .caster').forEach((row, i) => {
+                const n = row.dataset.n;
+                const idx = i + 1;
+                c[`caster${idx}Name`]    = document.getElementById(`cName${n}`).value;
+                c[`caster${idx}Twitter`] = document.getElementById(`cTwitter${n}`).value;
+                c[`caster${idx}Twitch`]  = document.getElementById(`cTwitch${n}`).value;
+            });
+            return c;
+        })(),
         allowIntro: document.getElementById('allowIntro').checked,
-        // alwaysOnTop: document.getElementById('alwaysOnTop').checked,
+        writeSimpleTexts: document.getElementById('writeSimpleTexts').checked,
     };
 
     await saveData(scoreboardJson);
