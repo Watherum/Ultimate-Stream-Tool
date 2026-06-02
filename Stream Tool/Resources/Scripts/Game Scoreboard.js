@@ -28,11 +28,20 @@ const socialInterval = 12000;
 
 
 let startup = true;
+let bestOfMap = {};
 
 
 window.onload = init;
 
 function init() {
+	const req = new XMLHttpRequest();
+	req.addEventListener("load", function() {
+		const modes = JSON.parse(req.responseText);
+		bestOfMap = Object.fromEntries(modes.map(m => [m.value, m]));
+	});
+	req.open("GET", "Resources/Texts/BestOfModes.json");
+	req.send();
+
 	async function mainLoop() {
 		const scInfo = await getInfo();
 		getData(scInfo);
@@ -220,13 +229,9 @@ async function getData(scInfo) {
 			{x: -pMove}, //from
 			{delay: introDelay, opacity: 1, ease: "power2.out", duration: fadeInTime}); //to
 
-		updateFormat(format);
-		//update the best of text
-		if (bestOf == "Bo5") {
-			document.getElementById('bestOf').textContent = "First to ";
-		} else {
-			document.getElementById('bestOf').textContent = "Best of ";
-		}
+		const bMode = bestOfMap[bestOf];
+		updateFormat(bMode?.prefix ? format : "");
+		document.getElementById('bestOf').textContent = bMode?.prefix ?? bMode?.name ?? "Best of ";
 		//fade them in (but only if round text is not empty)
 		if (format != "") {
 			gsap.to("#overlayFormat", 
@@ -422,7 +427,7 @@ async function getData(scInfo) {
 				gsap.fromTo('#win3P2',
 					{x: pMove},
 					{x: 0, opacity: 1, ease: "power2.out", duration: fadeInTime});
-				
+
 				fadeOut("#bestOf", () => {
 					document.getElementById('bestOf').textContent = "First to ";
 					fadeIn("#bestOf");
@@ -434,7 +439,8 @@ async function getData(scInfo) {
 					{x: pMove, opacity: 0, ease: "power2.in", duration: fadeInTime});
 
 				fadeOut("#bestOf", () => {
-					document.getElementById('bestOf').textContent = "Best of ";
+					const bMode = bestOfMap[bestOf];
+					document.getElementById('bestOf').textContent = bMode?.prefix ?? bMode?.name ?? "Best of ";
 					fadeIn("#bestOf");
 				});
 			}

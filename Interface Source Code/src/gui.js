@@ -78,6 +78,7 @@ const p2FlagImg    = document.getElementById('p2Flag');
 
 const roundInp = document.getElementById('roundName');
 const roundSelect = document.getElementById('roundSelect');
+const boSelect    = document.getElementById('boSelect');
 const roundNumberInp = document.getElementById('roundNumber');
 const useCustomRound = document.getElementById('useCustomRound');
 const formatInp = document.getElementById('format');
@@ -304,11 +305,28 @@ async function init() {
     p1NScoreInp.addEventListener("input", resizeInput);
     p2NScoreInp.addEventListener("input", resizeInput);
 
-    //set click listeners to cycle between best of values
-    document.getElementById("boToggleDiv").addEventListener("click", changeBestOf);
-    document.getElementById("boPrevDiv").addEventListener("click", changeBestOfPrev);
-    document.getElementById("boToggleDiv").style.backgroundImage = "linear-gradient(to top, #575757, #00000000)";
-    document.getElementById("boPrevDiv").style.backgroundImage = "linear-gradient(to top, #575757, #00000000)";
+    fetch(API_BASE + '/api/json/BestOfModes')
+        .then(r => r.json())
+        .then(data => {
+            data.forEach(entry => {
+                const opt = document.createElement('option');
+                opt.value = entry.value;
+                opt.textContent = entry.name;
+                boSelect.appendChild(opt);
+            });
+            boSelect.value = currentBestOf;
+        });
+
+    boSelect.addEventListener('change', () => {
+        if (currentBestOf === "WL") {
+            p1NameInp.value = "";
+            p2NameInp.value = "";
+            changeInputWidth(p1NameInp);
+            changeInputWidth(p2NameInp);
+        }
+        currentBestOf = boSelect.value;
+        applyWLMode();
+    });
 
 
     //check if the round is grand finals
@@ -328,15 +346,28 @@ async function init() {
     if (savedAbbreviate !== null) abbreviateRoundsCheck.checked = savedAbbreviate === 'true';
     abbreviateRoundsCheck.addEventListener('change', () => {
         localStorage.setItem('abbreviateRounds', abbreviateRoundsCheck.checked);
+        abbrevWLBox.style.display = abbreviateRoundsCheck.checked ? '' : 'none';
+        applyWLMode();
+    });
+
+    const abbreviateWLCheck = document.getElementById('abbreviateWL');
+    const abbrevWLBox = document.getElementById('abbrevWLBox');
+    const savedAbbrevWL = localStorage.getItem('abbreviateWL');
+    if (savedAbbrevWL !== null) abbreviateWLCheck.checked = savedAbbrevWL === 'true';
+    abbrevWLBox.style.display = abbreviateRoundsCheck.checked ? '' : 'none';
+    abbreviateWLCheck.addEventListener('change', () => {
+        localStorage.setItem('abbreviateWL', abbreviateWLCheck.checked);
     });
     roundSelect.addEventListener('change', () => {
+        const selected = roundNames.find(o => o.name === roundSelect.value);
+        if (selected?.customText) {
+            useCustomRound.checked = true;
+            applyRoundMode();
+            showToast("Switched to custom text. Re-enable predefined rounds in Settings.", 3500);
+            return;
+        }
         updateRoundNumberVisibility();
         checkRound();
-        const selected = roundNames.find(o => o.name === roundSelect.value);
-        if (selected?.forceFirstTo) {
-            currentBestOf = "FtX";
-            applyBestOf();
-        }
     });
 
     // load predefined round names
@@ -589,6 +620,7 @@ async function loadSavedData() {
         if (p2CountryInp) { p2CountryInp.value = data.p2Country || ""; updateFlagPreview(data.p2Country || "", p2FlagImg); }
 
         currentBestOf = data.bestOf || "Bo3";
+        applyBestOf();
         if (data.round) {
             const matched = roundNames.find(o => {
                 if (o.showNumber) return data.round.startsWith(o.name + ' ');
@@ -684,14 +716,7 @@ async function pollForUpdates() {
             await loadSavedData();
             localTimestamp = data.timestamp;
 
-            // show notification
-            const popup = document.getElementById('remoteUpdatePopup');
-            if (popup) {
-                popup.classList.add('show');
-                setTimeout(() => {
-                    popup.classList.remove('show');
-                }, 1000);
-            }
+            showToast('Overlay remotely updated', 1000);
         }
     } catch (error) {
         console.error("Polling error:", error);
@@ -1058,42 +1083,51 @@ function getTextWidth(text, font) {
 }
 
 
-function changeBestOf() {
-    if (currentBestOf === "Bo3") currentBestOf = "Bo5";
-    else if (currentBestOf === "Bo5") currentBestOf = "BoX";
-    else if (currentBestOf === "BoX") currentBestOf = "Ft5";
-    else if (currentBestOf === "Ft5") currentBestOf = "Ft10";
-    else if (currentBestOf === "Ft10") currentBestOf = "FtX";
-    else currentBestOf = "Bo3";
-    applyBestOf();
-}
-
-function changeBestOfPrev() {
-    if (currentBestOf === "Bo3") currentBestOf = "FtX";
-    else if (currentBestOf === "FtX") currentBestOf = "Ft10";
-    else if (currentBestOf === "Ft10") currentBestOf = "Ft5";
-    else if (currentBestOf === "Ft5") currentBestOf = "BoX";
-    else if (currentBestOf === "BoX") currentBestOf = "Bo5";
-    else currentBestOf = "Bo3";
-    applyBestOf();
-}
-
 function applyBestOf() {
-    const btn = document.getElementById("boToggleDiv");
-    if (!btn) return;
-    const labels = { Bo3: "Best of 3", Bo5: "Best of 5", BoX: "Best of X", Ft5: "First to 5", Ft10: "First to 10", FtX: "First to X" };
-    btn.textContent = labels[currentBestOf] || "Best of 3";
+    boSelect.value = currentBestOf;
+    applyWLMode();
+}
+
+function applyWLMode() {
+    if (currentBestOf === "WL") {
+        const abbrev = document.getElementById('abbreviateRounds')?.checked;
+        p1NameInp.value = abbrev ? "W" : "Wins";
+        p2NameInp.value = abbrev ? "L" : "Losses";
+        changeInputWidth(p1NameInp);
+        changeInputWidth(p2NameInp);
+    }
+    if (currentBestOf === "WL" || currentBestOf === "CB") {
+        roundSelect.value = "(None)";
+        updateRoundNumberVisibility();
+    }
 }
 
 
 function abbreviateRound(str) {
     if (!document.getElementById('abbreviateRounds')?.checked) return str;
-    return str.replace(/\bRound\b/g, 'Rd').replace(/\bQuarters\b/g, 'Qrts');
+    let result = str.replace(/\bRound\b/g, 'Rd').replace(/\bQuarters\b/g, 'Qrts');
+    if (document.getElementById('abbreviateWL')?.checked) {
+        result = result.replace(/\bWinners\b/g, 'Wnrs').replace(/\bLosers\b/g, 'Lsrs');
+    }
+    return result;
+}
+
+function showToast(message, duration = 1000) {
+    const popup = document.getElementById('remoteUpdatePopup');
+    if (!popup) return;
+    popup.textContent = message;
+    popup.classList.add('show');
+    setTimeout(() => {
+        popup.classList.remove('show');
+        setTimeout(() => { popup.textContent = 'Overlay remotely updated'; }, 500);
+    }, duration);
 }
 
 function getRoundValue() {
+    if (currentBestOf === "WL") return '';
     if (useCustomRound.checked) return roundInp.value;
     const selected = roundNames.find(o => o.name === roundSelect.value);
+    if (selected?.none) return '';
     let value;
     if (selected?.showNumber && roundNumberInp.value) {
         value = `${roundSelect.value} ${roundNumberInp.value}`;

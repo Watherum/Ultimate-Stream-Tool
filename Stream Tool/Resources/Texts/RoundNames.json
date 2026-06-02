@@ -51,11 +51,6 @@
         "name": "True Finals"
     },
     {
-        "name": "First to",
-        "showNumber": true,
-        "forceFirstTo": "X"
-    },
-    {
         "name": "Friendlies"
     },
     {
@@ -63,5 +58,13 @@
     },
     {
         "name": "Exhibition Match"
+    },
+    {
+        "name": "Custom Text",
+        "customText": true
+    },
+    {
+        "name": "(None)",
+        "none": true
     }
 ]

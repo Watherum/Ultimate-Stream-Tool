@@ -167,10 +167,9 @@
         
         <div id="roundInfo">
           <div id="bestOf">
-            <div id="boToggleDiv" class="bestOfBox">Best of 3</div>
-            <div id="boPrevDiv" class="bestOfBox">&#9664;</div>
+            <select id="boSelect" class="textInput mousetrap"></select>
             <input type="number" min= "0" id="format" class="textInput mousetrap" placeholder="0"  spellcheck="false" style="display:none;">
-            <div id="presetsRegion" class="bestOfBox" title="Player Presets">Presets</div>
+            <div id="presetsRegion" title="Player Presets">Presets</div>
           </div>
          
           <div id="roundCenter">
@@ -224,6 +223,10 @@
           <div class="settingBox" title="Abbreviates round names: 'Round' → 'Rd', 'Quarters' → 'Qrts'">
             <input type="checkbox" id="abbreviateRounds" class="settingsCheck" tabindex="-1" checked>
             <label for="abbreviateRounds" class="settingsText">Abbreviate round names</label>
+          </div>
+          <div class="settingBox settingBoxSub" id="abbrevWLBox" title="Abbreviates Winners → Wnrs and Losers → Lsrs">
+            <input type="checkbox" id="abbreviateWL" class="settingsCheck" tabindex="-1">
+            <label for="abbreviateWL" class="settingsText">Abbreviate Winners &amp; Losers</label>
           </div>
           <div class="settingBox" title="Plays an intro on 'Scoreboard.html' whenever the file loads">
             <input type="checkbox" id="allowIntro" class="settingsCheck" tabindex="-1">

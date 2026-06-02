@@ -58,12 +58,18 @@
         const p2seed = document.getElementById("p2seed");
 
         let COUNTRY_CODES_BY_NAME = null;
+        let bestOfNameMap = {};
         let lastData = null;
 
         fetch("Resources/COUNTRY_CODES.json").then(r => r.json()).then(data => {
             COUNTRY_CODES_BY_NAME = Object.fromEntries(
                 Object.entries(data).map(([code, name]) => [name, code])
             );
+            if (lastData) render(lastData);
+        });
+
+        fetch("Resources/Texts/BestOfModes.json").then(r => r.json()).then(data => {
+            bestOfNameMap = Object.fromEntries(data.map(e => [e.value, e.name]));
             if (lastData) render(lastData);
         });
 
@@ -110,8 +116,7 @@
             p2score.textContent = data.score[1];
 
             round.textContent = data.round;
-            const bestOfLabels = { Bo3: "Best of 3", Bo5: "Best of 5", BoX: "Best of X", Ft5: "First to 5", Ft10: "First to 10", FtX: "First to X" };
-            bestOf.textContent = bestOfLabels[data.bestOf] || `Best of ${data.bestOf}`;
+            bestOf.textContent = bestOfNameMap[data.bestOf] || data.bestOf;
 
             p1wl.textContent = data.wl[0];
             p2wl.textContent = data.wl[1];

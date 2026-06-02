@@ -1,0 +1,10 @@
+[
+    { "name": "Best of 3",     "value": "Bo3",  "prefix": "Best of " },
+    { "name": "Best of 5",     "value": "Bo5",  "prefix": "Best of " },
+    { "name": "Best of X",     "value": "BoX",  "prefix": "Best of " },
+    { "name": "First to 5",    "value": "Ft5",  "prefix": "First To " },
+    { "name": "First to 10",   "value": "Ft10", "prefix": "First To " },
+    { "name": "First to X",    "value": "FtX",  "prefix": "First To " },
+    { "name": "Wins / Losses", "value": "WL" },
+    { "name": "Crew Battle",   "value": "CB" }
+]

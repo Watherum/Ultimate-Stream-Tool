@@ -29,7 +29,7 @@ window.initWebsocket = function(channel, callback) {
             ],
             score: [json.p1NScore, json.p2NScore],
             round:  json.round  || "",
-            bestOf: (json.bestOf || "").replace("Bo", ""),
+            bestOf: json.bestOf || "",
             wl:    [json.p1WL   || "", json.p2WL || ""]
         });
     }

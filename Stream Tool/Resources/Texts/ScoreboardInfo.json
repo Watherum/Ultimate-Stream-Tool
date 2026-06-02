@@ -20,7 +20,7 @@
   "p2Seed": "",
   "p2Country": "",
   "bestOf": "Bo3",
-  "round": "",
+  "round": "Wnrs Rd 1",
   "format": "0",
   "tournamentName": "",
   "caster1Name": "",
@@ -29,5 +29,6 @@
   "caster2Name": "",
   "caster2Twitter": "",
   "caster2Twitch": "",
-  "allowIntro": false
+  "allowIntro": false,
+  "writeSimpleTexts": true
 }
