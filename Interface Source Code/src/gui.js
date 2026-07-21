@@ -321,6 +321,14 @@ async function init() {
     p1TeammateCountryInp.addEventListener('input', () => updateFlagPreview(p1TeammateCountryInp.value, p1TeammateFlagImg));
     p2TeammateCountryInp.addEventListener('input', () => updateFlagPreview(p2TeammateCountryInp.value, p2TeammateFlagImg));
 
+    //pull start.gg data for the teammate too, same as the main player name box
+    p1TeammateInp.addEventListener("change", () => {
+        applyStartGGToPlayer(p1TeammateInp.value, p1TeammateSeedInp, p1TeammateCountryInp, p1TeammateTagInp, p1TeammatePronInp, p1TeammateFlagImg);
+    });
+    p2TeammateInp.addEventListener("change", () => {
+        applyStartGGToPlayer(p2TeammateInp.value, p2TeammateSeedInp, p2TeammateCountryInp, p2TeammateTagInp, p2TeammatePronInp, p2TeammateFlagImg);
+    });
+
     //crew battle stock +/- buttons
     document.getElementById('p1StockPlus').addEventListener('click', () => {
         crewStocks1Inp.value = Number(crewStocks1Inp.value) + 1;
@@ -1958,15 +1966,17 @@ async function fetchStartGG() {
             if (!entrants) throw new Error(json.errors?.[0]?.message || 'Bad response — check slug');
             totalPages = entrants.pageInfo.totalPages;
             for (const node of entrants.nodes) {
-                const p = node.participants?.[0];
-                if (!p) continue;
-                startGGData[p.gamerTag.toLowerCase()] = {
-                    name:     p.gamerTag,
-                    seed:     node.initialSeedNum ?? "",
-                    country:  p.user?.location?.country ?? "",
-                    tag:      p.prefix ?? "",
-                    pronouns: p.user?.genderPronoun ?? ""
-                };
+                //an entrant can be a solo player or a doubles team — every participant on the
+                //entrant (both teammates) shares the same entrant seed
+                for (const p of node.participants ?? []) {
+                    startGGData[p.gamerTag.toLowerCase()] = {
+                        name:     p.gamerTag,
+                        seed:     node.initialSeedNum ?? "",
+                        country:  p.user?.location?.country ?? "",
+                        tag:      p.prefix ?? "",
+                        pronouns: p.user?.genderPronoun ?? ""
+                    };
+                }
             }
             page++;
         } while (page <= totalPages);
@@ -1994,6 +2004,8 @@ async function fetchStartGG() {
         statusEl.textContent = `${total} players — ${newCount} new, ${updatedCount} updated`;
         applyStartGGToPlayer(p1NameInp.value, p1SeedInp, p1CountryInp, p1TagInp, p1PronInp, p1FlagImg);
         applyStartGGToPlayer(p2NameInp.value, p2SeedInp, p2CountryInp, p2TagInp, p2PronInp, p2FlagImg);
+        applyStartGGToPlayer(p1TeammateInp.value, p1TeammateSeedInp, p1TeammateCountryInp, p1TeammateTagInp, p1TeammatePronInp, p1TeammateFlagImg);
+        applyStartGGToPlayer(p2TeammateInp.value, p2TeammateSeedInp, p2TeammateCountryInp, p2TeammateTagInp, p2TeammatePronInp, p2TeammateFlagImg);
     } catch (e) {
         statusEl.textContent = 'Error: ' + e.message;
     } finally {

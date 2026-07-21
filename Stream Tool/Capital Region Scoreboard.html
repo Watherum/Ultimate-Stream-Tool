@@ -11,10 +11,13 @@
     <div id="canvas">
       <img src="Resources/Overlay/Capital Region Stream Overlay.png" alt=""/>
       <img id="char1icon" src="" alt=""/>
+      <img id="char1teammateicon" class="teammateIcon" src="" alt=""/>
       <img id="char2icon" src="" alt=""/>
+      <img id="char2teammateicon" class="teammateIcon" src="" alt=""/>
 
       <img id="p1flag" class="playerFlag" src="" alt="">
       <span id="p1seed"></span>
+      <span id="p1teamname" class="teamName"></span>
       <span id="p1name"><span class="tag"></span><span class="name"></span></span>
       <span id="p1pronouns"></span>
       <span id="p1score"></span>
@@ -22,6 +25,7 @@
 
       <img id="p2flag" class="playerFlag" src="" alt="">
       <span id="p2seed"></span>
+      <span id="p2teamname" class="teamName"></span>
       <span id="p2name"><span class="tag"></span><span class="name"></span></span>
       <span id="p2pronouns"></span>
       <span id="p2score"></span>
@@ -36,9 +40,13 @@
 
         const char1icon = document.getElementById("char1icon");
         const char2icon = document.getElementById("char2icon");
+        const char1teammateicon = document.getElementById("char1teammateicon");
+        const char2teammateicon = document.getElementById("char2teammateicon");
 
         const p1name = document.getElementById("p1name");
         const p2name = document.getElementById("p2name");
+        const p1teamname = document.getElementById("p1teamname");
+        const p2teamname = document.getElementById("p2teamname");
 
         const p1pronouns = document.getElementById("p1pronouns");
         const p2pronouns = document.getElementById("p2pronouns");
@@ -91,18 +99,47 @@
         function render(data) {
             const p1 = data.player[0];
             const p2 = data.player[1];
+            const matchType = data.matchType || "singles";
+            const isDoubles = matchType === "doubles";
+            const isCrew = matchType === "crew";
+
+            document.body.classList.toggle("doublesMode", isDoubles);
+            document.body.classList.toggle("crewMode", isCrew);
 
             char1icon.src = `Resources/Characters/Stock Icons/${p1.char}/1.png`;
             char2icon.src = `Resources/Characters/Stock Icons/${p2.char}/1.png`;
+            char1teammateicon.src = `Resources/Characters/Stock Icons/${p1.teammateChar}/1.png`;
+            char2teammateicon.src = `Resources/Characters/Stock Icons/${p2.teammateChar}/1.png`;
 
-            p1name.querySelector(".tag").textContent = p1.tag ? `${p1.tag} | ` : "";
-            p1name.querySelector(".name").textContent = p1.name;
-
-            p2name.querySelector(".tag").textContent = p2.tag ? `${p2.tag} | ` : "";
-            p2name.querySelector(".name").textContent = p2.name;
+            if (isDoubles) {
+                const p1Pair = p1.teammateName ? `${p1.name} & ${p1.teammateName}` : p1.name;
+                const p2Pair = p2.teammateName ? `${p2.name} & ${p2.teammateName}` : p2.name;
+                p1name.querySelector(".tag").textContent = "";
+                p1name.querySelector(".name").textContent = p1Pair;
+                p2name.querySelector(".tag").textContent = "";
+                p2name.querySelector(".name").textContent = p2Pair;
+                p1teamname.textContent = p1.teamName;
+                p2teamname.textContent = p2.teamName;
+            } else if (isCrew) {
+                p1name.querySelector(".tag").textContent = p1.tag ? `${p1.tag} | ` : "";
+                p1name.querySelector(".name").textContent = p1.name;
+                p2name.querySelector(".tag").textContent = p2.tag ? `${p2.tag} | ` : "";
+                p2name.querySelector(".name").textContent = p2.name;
+                p1teamname.textContent = p1.teamName;
+                p2teamname.textContent = p2.teamName;
+            } else {
+                p1name.querySelector(".tag").textContent = p1.tag ? `${p1.tag} | ` : "";
+                p1name.querySelector(".name").textContent = p1.name;
+                p2name.querySelector(".tag").textContent = p2.tag ? `${p2.tag} | ` : "";
+                p2name.querySelector(".name").textContent = p2.name;
+                p1teamname.textContent = "";
+                p2teamname.textContent = "";
+            }
 
             fitText(p1name, 300);
             fitText(p2name, 300);
+            fitText(p1teamname, 300, 28);
+            fitText(p2teamname, 300, 28);
 
             p1pronouns.textContent = p1.pronouns;
             p2pronouns.textContent = p2.pronouns;
@@ -112,8 +149,8 @@
             p1seed.textContent = p1.seed ? `Seed ${p1.seed}` : "";
             p2seed.textContent = p2.seed ? `Seed ${p2.seed}` : "";
 
-            p1score.textContent = data.score[0];
-            p2score.textContent = data.score[1];
+            p1score.textContent = isCrew ? p1.crewStocks : data.score[0];
+            p2score.textContent = isCrew ? p2.crewStocks : data.score[1];
 
             round.textContent = data.round;
             bestOf.textContent = bestOfNameMap[data.bestOf] || data.bestOf;

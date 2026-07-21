@@ -271,6 +271,11 @@ body.fillHeight:not(.matchExtraDoubles) .pInfo {
   margin-right: 4px;
 }
 
+/* teammate (P3/P4) seed isn't rendered anywhere in the overlay — only the team's own p1Seed/p2Seed is */
+#p1TeammateSeed, #p2TeammateSeed {
+  display: none;
+}
+
 /* doubles / crew battle extras (hidden unless the match type asks for them) */
 .crewStockBox {
   display: flex;

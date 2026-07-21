@@ -56,8 +56,62 @@ const blankScoreboard = {
     caster2Name: "", caster2Twitter: "", caster2Twitch: "",
     allowIntro: false
 };
+// writes the individual OBS text files (and character icons) from a scoreboard object;
+// shared by the POST handler and the startup reset so they can't drift apart
+function writeSimpleTexts(scoreboardJson) {
+    fs.writeFileSync(path.join(mainPath, "Simple Texts", "Player 1.txt"), scoreboardJson.p1Name || "");
+    fs.writeFileSync(mainPath + "/Simple Texts/Player 1 Pronouns.txt", scoreboardJson.p1Pron || "");
+    fs.writeFileSync(mainPath + "/Simple Texts/Player 1 Tag.txt", scoreboardJson.p1Team || "");
+    fs.writeFileSync(mainPath + "/Simple Texts/Player 1 Character.txt", scoreboardJson.p1Character || "");
+    fs.writeFileSync(mainPath + "/Simple Texts/Left Winnerslosers.txt", scoreboardJson.p1WL || "");
+
+    fs.writeFileSync(path.join(mainPath, "Simple Texts", "Player 2.txt"), scoreboardJson.p2Name || "");
+    fs.writeFileSync(mainPath + "/Simple Texts/Player 2 Pronouns.txt", scoreboardJson.p2Pron || "");
+    fs.writeFileSync(mainPath + "/Simple Texts/Player 2 Tag.txt", scoreboardJson.p2Team || "");
+    fs.writeFileSync(mainPath + "/Simple Texts/Player 2 Character.txt", scoreboardJson.p2Character || "");
+    fs.writeFileSync(mainPath + "/Simple Texts/Right Winnerslosers.txt", scoreboardJson.p2WL || "");
+
+    fs.writeFileSync(path.join(mainPath, "Simple Texts", "Score 1.txt"), scoreboardJson.p1NScore || "0");
+    fs.writeFileSync(path.join(mainPath, "Simple Texts", "Score 2.txt"), scoreboardJson.p2NScore || "0");
+
+    // doubles teammates and crew battle info — always written (blank when unused) so switching
+    // back to singles, or a fresh startup reset, doesn't leave stale P3/P4 text behind
+    for (const pn of [1, 2]) {
+        fs.writeFileSync(path.join(mainPath, "Simple Texts", `Player ${pn} Teammate.txt`),           scoreboardJson[`p${pn}TeammateName`]      || "");
+        fs.writeFileSync(path.join(mainPath, "Simple Texts", `Player ${pn} Teammate Character.txt`), scoreboardJson[`p${pn}TeammateCharacter`] || "");
+        fs.writeFileSync(path.join(mainPath, "Simple Texts", `Player ${pn} Teammate Tag.txt`),       scoreboardJson[`p${pn}TeammateTag`]       || "");
+        fs.writeFileSync(path.join(mainPath, "Simple Texts", `Player ${pn} Teammate Pronouns.txt`),  scoreboardJson[`p${pn}TeammatePron`]      || "");
+        fs.writeFileSync(path.join(mainPath, "Simple Texts", `Player ${pn} Teammate Seed.txt`),      scoreboardJson[`p${pn}TeammateSeed`]      || "");
+        fs.writeFileSync(path.join(mainPath, "Simple Texts", `Player ${pn} Teammate Country.txt`),   scoreboardJson[`p${pn}TeammateCountry`]   || "");
+    }
+    fs.writeFileSync(path.join(mainPath, "Simple Texts", "Team 1 Name.txt"), scoreboardJson.teamName1 || "");
+    fs.writeFileSync(path.join(mainPath, "Simple Texts", "Team 2 Name.txt"), scoreboardJson.teamName2 || "");
+    fs.writeFileSync(path.join(mainPath, "Simple Texts", "Crew Stocks 1.txt"), String(scoreboardJson.crewStocks1 ?? "0"));
+    fs.writeFileSync(path.join(mainPath, "Simple Texts", "Crew Stocks 2.txt"), String(scoreboardJson.crewStocks2 ?? "0"));
+
+    fs.writeFileSync(path.join(mainPath, "Simple Texts", "Round.txt"), scoreboardJson.round || "");
+    fs.writeFileSync(path.join(mainPath, "Simple Texts", "Format.txt"), scoreboardJson.format || "");
+    fs.writeFileSync(path.join(mainPath, "Simple Texts", "bestOf.txt"), scoreboardJson.bestOf || "");
+    fs.writeFileSync(path.join(mainPath, "Simple Texts", "Tournament Name.txt"), scoreboardJson.tournamentName || "");
+
+    for (let cn = 1; scoreboardJson[`caster${cn}Name`] !== undefined && cn <= 10; cn++) {
+        fs.writeFileSync(path.join(mainPath, "Simple Texts", `Caster ${cn} Name.txt`),    scoreboardJson[`caster${cn}Name`]    || "");
+        fs.writeFileSync(path.join(mainPath, "Simple Texts", `Caster ${cn} Twitter.txt`), scoreboardJson[`caster${cn}Twitter`] || "");
+        fs.writeFileSync(path.join(mainPath, "Simple Texts", `Caster ${cn} Twitch.txt`),  scoreboardJson[`caster${cn}Twitch`]  || "");
+    }
+
+    fs.writeFileSync(path.join(mainPath, "Simple Texts", "Player 1 Seed.txt"), scoreboardJson.p1Seed || "");
+    fs.writeFileSync(path.join(mainPath, "Simple Texts", "Player 2 Seed.txt"), scoreboardJson.p2Seed || "");
+    fs.writeFileSync(path.join(mainPath, "Simple Texts", "Player 1 Country.txt"), scoreboardJson.p1Country || "");
+    fs.writeFileSync(path.join(mainPath, "Simple Texts", "Player 2 Country.txt"), scoreboardJson.p2Country || "");
+
+    fs.copyFileSync(iconPath + "/" + scoreboardJson.p1Character + "/1.png", mainPath + "/Simple Texts/Player 1 Character Icon/1.png");
+    fs.copyFileSync(iconPath + "/" + scoreboardJson.p2Character + "/1.png", mainPath + "/Simple Texts/Player 2 Character Icon/1.png");
+}
+
 try {
     fs.writeFileSync(path.join(mainPath, "ScoreboardInfo.json"), JSON.stringify(blankScoreboard, null, 2));
+    writeSimpleTexts(blankScoreboard);
     console.log("Scoreboard cleared on startup");
 } catch (error) {
     console.error("Failed to clear scoreboard on startup:", error);
@@ -99,59 +153,7 @@ app.post('/api/scoreboard', (req, res) => {
         fs.writeFileSync(path.join(mainPath, "ScoreboardInfo.json"), data);
 
         if (scoreboardJson.writeSimpleTexts !== false) {
-            fs.writeFileSync(path.join(mainPath, "Simple Texts", "Player 1.txt"), scoreboardJson.p1Name || "");
-            fs.writeFileSync(mainPath + "/Simple Texts/Player 1 Pronouns.txt", scoreboardJson.p1Pron || "");
-            fs.writeFileSync(mainPath + "/Simple Texts/Player 1 Tag.txt", scoreboardJson.p1Team);
-            fs.writeFileSync(mainPath + "/Simple Texts/Player 1 Character.txt", scoreboardJson.p1Character);
-            fs.writeFileSync(mainPath + "/Simple Texts/Left Winnerslosers.txt", scoreboardJson.p1WL || "");
-
-            fs.writeFileSync(path.join(mainPath, "Simple Texts", "Player 2.txt"), scoreboardJson.p2Name || "");
-            fs.writeFileSync(mainPath + "/Simple Texts/Player 2 Pronouns.txt", scoreboardJson.p2Pron || "");
-            fs.writeFileSync(mainPath + "/Simple Texts/Player 2 Tag.txt", scoreboardJson.p2Team);
-            fs.writeFileSync(mainPath + "/Simple Texts/Player 2 Character.txt", scoreboardJson.p2Character);
-            fs.writeFileSync(mainPath + "/Simple Texts/Right Winnerslosers.txt", scoreboardJson.p2WL || "");
-
-            fs.writeFileSync(path.join(mainPath, "Simple Texts", "Score 1.txt"), scoreboardJson.p1NScore || "0");
-            fs.writeFileSync(path.join(mainPath, "Simple Texts", "Score 2.txt"), scoreboardJson.p2NScore || "0");
-
-            // doubles teammates and crew battle info, only written by the modes that use them
-            if (scoreboardJson.matchType === "doubles") {
-                for (const pn of [1, 2]) {
-                    fs.writeFileSync(path.join(mainPath, "Simple Texts", `Player ${pn} Teammate.txt`),           scoreboardJson[`p${pn}TeammateName`]      || "");
-                    fs.writeFileSync(path.join(mainPath, "Simple Texts", `Player ${pn} Teammate Character.txt`), scoreboardJson[`p${pn}TeammateCharacter`] || "");
-                    fs.writeFileSync(path.join(mainPath, "Simple Texts", `Player ${pn} Teammate Tag.txt`),       scoreboardJson[`p${pn}TeammateTag`]       || "");
-                    fs.writeFileSync(path.join(mainPath, "Simple Texts", `Player ${pn} Teammate Pronouns.txt`),  scoreboardJson[`p${pn}TeammatePron`]      || "");
-                    fs.writeFileSync(path.join(mainPath, "Simple Texts", `Player ${pn} Teammate Seed.txt`),      scoreboardJson[`p${pn}TeammateSeed`]      || "");
-                    fs.writeFileSync(path.join(mainPath, "Simple Texts", `Player ${pn} Teammate Country.txt`),   scoreboardJson[`p${pn}TeammateCountry`]   || "");
-                }
-            }
-            if (scoreboardJson.teamName1 !== undefined || scoreboardJson.teamName2 !== undefined) {
-                fs.writeFileSync(path.join(mainPath, "Simple Texts", "Team 1 Name.txt"), scoreboardJson.teamName1 || "");
-                fs.writeFileSync(path.join(mainPath, "Simple Texts", "Team 2 Name.txt"), scoreboardJson.teamName2 || "");
-            }
-            if (scoreboardJson.matchType === "crew") {
-                fs.writeFileSync(path.join(mainPath, "Simple Texts", "Crew Stocks 1.txt"), String(scoreboardJson.crewStocks1 ?? "0"));
-                fs.writeFileSync(path.join(mainPath, "Simple Texts", "Crew Stocks 2.txt"), String(scoreboardJson.crewStocks2 ?? "0"));
-            }
-
-            fs.writeFileSync(path.join(mainPath, "Simple Texts", "Round.txt"), scoreboardJson.round || "");
-            fs.writeFileSync(path.join(mainPath, "Simple Texts", "Format.txt"), scoreboardJson.format || "");
-            fs.writeFileSync(path.join(mainPath, "Simple Texts", "bestOf.txt"), scoreboardJson.bestOf || "");
-            fs.writeFileSync(path.join(mainPath, "Simple Texts", "Tournament Name.txt"), scoreboardJson.tournamentName || "");
-
-            for (let cn = 1; scoreboardJson[`caster${cn}Name`] !== undefined && cn <= 10; cn++) {
-                fs.writeFileSync(path.join(mainPath, "Simple Texts", `Caster ${cn} Name.txt`),    scoreboardJson[`caster${cn}Name`]    || "");
-                fs.writeFileSync(path.join(mainPath, "Simple Texts", `Caster ${cn} Twitter.txt`), scoreboardJson[`caster${cn}Twitter`] || "");
-                fs.writeFileSync(path.join(mainPath, "Simple Texts", `Caster ${cn} Twitch.txt`),  scoreboardJson[`caster${cn}Twitch`]  || "");
-            }
-
-            fs.writeFileSync(path.join(mainPath, "Simple Texts", "Player 1 Seed.txt"), scoreboardJson.p1Seed || "");
-            fs.writeFileSync(path.join(mainPath, "Simple Texts", "Player 2 Seed.txt"), scoreboardJson.p2Seed || "");
-            fs.writeFileSync(path.join(mainPath, "Simple Texts", "Player 1 Country.txt"), scoreboardJson.p1Country || "");
-            fs.writeFileSync(path.join(mainPath, "Simple Texts", "Player 2 Country.txt"), scoreboardJson.p2Country || "");
-
-            fs.copyFileSync(iconPath + "/" + scoreboardJson.p1Character + "/1.png", mainPath + "/Simple Texts/Player 1 Character Icon/1.png");
-            fs.copyFileSync(iconPath + "/" + scoreboardJson.p2Character + "/1.png", mainPath + "/Simple Texts/Player 2 Character Icon/1.png");
+            writeSimpleTexts(scoreboardJson);
         }
 
         lastUpdateTimestamp = Date.now();

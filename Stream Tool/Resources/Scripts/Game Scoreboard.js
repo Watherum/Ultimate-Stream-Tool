@@ -90,6 +90,8 @@ async function getData(scInfo) {
 		scInfo['p2TeammateName'] || "", scInfo['teamName2'] || "");
 	p1Name = side1.name; p1Team = side1.team; p1Pron = side1.pron;
 	p2Name = side2.name; p2Team = side2.team; p2Pron = side2.pron;
+	const p1TeamLabel = side1.teamLabel;
+	const p2TeamLabel = side2.teamLabel;
 
 	//in a crew battle the stock count takes over the score display
 	if (matchType == "crew") {
@@ -195,6 +197,7 @@ async function getData(scInfo) {
 		//finally out of the intro, now lets start with player 1 first
 		//update player name and team name texts
 		updatePlayerName('p1Wrapper', 'p1Name', 'p1Team', 'p1Pron', p1Name, p1Team, p1Pron);
+		updateText('p1TeamNameLabel', p1TeamLabel, '24px');
 		//sets the starting position for the player text, then fades in and moves the p1 text to the next keyframe
 		gsap.fromTo("#p1Wrapper", 
 			{x: -pMove}, //from
@@ -227,6 +230,7 @@ async function getData(scInfo) {
 
 		//took notes from player 1? well, this is exactly the same!
 		updatePlayerName('p2Wrapper', 'p2Name', 'p2Team', 'p2Pron', p2Name, p2Team, p2Pron);
+		updateText('p2TeamNameLabel', p2TeamLabel, '24px');
 		gsap.fromTo("#p2Wrapper", 
 			{x: pMove},
 			{delay: introDelay+.1, x: 0, opacity: 1, ease: "power2.out", duration: fadeInTime});
@@ -376,6 +380,11 @@ async function getData(scInfo) {
 	});
 }
 
+		//the team name label above (doubles/crew only, but harmless to keep in sync either way)
+		if (document.getElementById('p1TeamNameLabel').textContent != p1TeamLabel) {
+			updateText('p1TeamNameLabel', p1TeamLabel, '24px');
+		}
+
 		//player 1's character portrait change
 		if (p1CharacterPrev != p1Character || p1SkinPrev != p1Skin) {
 			//fade out the images while also moving them because that always looks cool
@@ -437,6 +446,10 @@ async function getData(scInfo) {
 				updatePlayerName('p2Wrapper', 'p2Name', 'p2Team', 'p2Pron', p2Name, p2Team, p2Pron);
 				fadeInMove("#p2Wrapper");
 			});
+		}
+
+		if (document.getElementById('p2TeamNameLabel').textContent != p2TeamLabel) {
+			updateText('p2TeamNameLabel', p2TeamLabel, '24px');
 		}
 
 		if (p2CharacterPrev != p2Character || p2SkinPrev != p2Skin) {
@@ -595,20 +608,21 @@ function showNothing(itemEL) {
 //decides what the team/name/pronoun slots of a side show for the current match type
 function getSideTexts(matchType, pName, pTeam, pPron, teammateName, teamName) {
 	if (matchType == "doubles") {
-		//an explicit team name wins, if not we just pair both players up
+		//the team name (if any) shows above as its own label, so this slot always pairs the players up
 		const pair = teammateName ? pName + " & " + teammateName : pName;
-		return {name: teamName || pair, team: "", pron: ""};
+		return {name: pair, team: "", pron: "", teamLabel: teamName};
 	}
 	if (matchType == "crew") {
-		//pName is whoever is repping the crew right now
-		return {name: pName, team: teamName, pron: pPron};
+		//pName is whoever is repping the crew right now, pTeam is their sponsor
+		return {name: pName, team: pTeam, pron: pPron, teamLabel: teamName};
 	}
-	return {name: pName, team: pTeam, pron: pPron};
+	return {name: pName, team: pTeam, pron: pPron, teamLabel: ""};
 }
 
-//makes room for the teammate portraits when in doubles
+//makes room for the teammate portraits when in doubles, and shows the team name label in doubles/crew
 function applyMatchType(matchType) {
 	document.body.classList.toggle('doublesMode', matchType == "doubles");
+	document.body.classList.toggle('crewMode', matchType == "crew");
 }
 
 //teammate portrait change

@@ -51,7 +51,7 @@
 
 #char1icon {
     width: 50px;
-    top: 75px;
+    top: 83px;
     left: 250px;
 }
 
@@ -88,7 +88,7 @@
 
 #char2icon {
     width: 50px;
-    top: 75px;
+    top: 83px;
     left: 1555px;
 }
 
@@ -138,4 +138,74 @@
     font-size: 18px;
     top: 33px;
     left: 1445px;
+}
+
+/* doubles: both team members share the single character slot, stacked */
+.teammateIcon {
+    display: none;
+}
+#char1teammateicon {
+    left: 284px;
+    top: 83px;
+}
+#char2teammateicon {
+    left: 1521px;
+    top: 83px;
+}
+body.doublesMode #char1icon,
+body.doublesMode #char2icon {
+    width: 30px;
+}
+body.doublesMode .teammateIcon {
+    display: block;
+    width: 30px;
+}
+
+/* doubles: team name sits above the paired player names */
+.teamName {
+    display: none;
+    color: yellow;
+    font-size: 28px;
+    text-align: center;
+    white-space: nowrap;
+}
+body.doublesMode .teamName,
+body.crewMode .teamName {
+    display: block;
+}
+#p1teamname {
+    top: 68px;
+    left: 527px;
+    transform: translate(-50%, -50%);
+}
+#p2teamname {
+    top: 68px;
+    left: 1380px;
+    transform: translate(-50%, -50%);
+}
+body.doublesMode #p1name,
+body.doublesMode #p2name,
+body.crewMode #p1name,
+body.crewMode #p2name {
+    top: 106px;
+}
+
+/* doubles: pronouns and country are per-player, not shown for the team; seed still applies to the team */
+body.doublesMode .playerFlag,
+body.doublesMode #p1pronouns,
+body.doublesMode #p2pronouns {
+    display: none;
+}
+
+/* doubles: seed takes the pronouns' old spot below the names */
+body.doublesMode #p1seed,
+body.doublesMode #p2seed {
+    top: 130px;
+    font-size: 20px;
+}
+body.doublesMode #p1seed {
+    left: 260px;
+}
+body.doublesMode #p2seed {
+    left: 1520px;
 }

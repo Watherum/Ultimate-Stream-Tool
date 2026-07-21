@@ -139,3 +139,60 @@
     top: 123px;
     left: 1500px;
 }
+
+/* doubles: both team members share the single character slot, side by side */
+.teammateIcon {
+    display: none;
+}
+#char1teammateicon {
+    left: 279px;
+    top: 65px;
+}
+#char2teammateicon {
+    left: 1536px;
+    top: 65px;
+}
+body.doublesMode #char1icon,
+body.doublesMode #char2icon {
+    width: 30px;
+}
+body.doublesMode .teammateIcon {
+    display: block;
+    width: 30px;
+}
+
+/* doubles / crew: team name sits above the player name */
+.teamName {
+    display: none;
+    color: yellow;
+    font-size: 28px;
+    text-align: center;
+    white-space: nowrap;
+}
+body.doublesMode .teamName,
+body.crewMode .teamName {
+    display: block;
+}
+#p1teamname {
+    top: 56px;
+    left: 502px;
+    transform: translate(-50%, -50%);
+}
+#p2teamname {
+    top: 56px;
+    left: 1443px;
+    transform: translate(-50%, -50%);
+}
+body.doublesMode #p1name,
+body.doublesMode #p2name,
+body.crewMode #p1name,
+body.crewMode #p2name {
+    top: 94px;
+}
+
+/* doubles: pronouns and country are per-player, not shown for the team; the team's own seed stays put */
+body.doublesMode .playerFlag,
+body.doublesMode #p1pronouns,
+body.doublesMode #p2pronouns {
+    display: none;
+}

@@ -168,6 +168,30 @@ transform: translate(-50%, 0);
         .teams {
         }
 
+        /* doubles / crew: team name sits above the player name */
+        .teamNameLabel {
+            position: absolute;
+            width: 330px;
+            top: 315px;
+            font-family: "Smash";
+            color: yellow;
+            font-size: 24px;
+            opacity: 0;
+            white-space: nowrap;
+        }
+        #p1TeamNameLabel {
+            left: 297px;
+            text-align: left;
+        }
+        #p2TeamNameLabel {
+            right: -236px;
+            text-align: right;
+        }
+        body.doublesMode .teamNameLabel,
+        body.crewMode .teamNameLabel {
+            opacity: 1;
+        }
+
         .pronouns {
             font-style: italic;
         }
@@ -484,6 +508,7 @@ transform: translate(-50%, 0);
 
         <img id="teamLogoP1" class="teamLogo">
 
+        <span id="p1TeamNameLabel" class="teamNameLabel"></span>
         <span id="p1Wrapper" class="wrappers">
             <span id="p1Team" class="teams"></span>
             <span id="p1Name" class="names"></span>
@@ -534,6 +559,7 @@ transform: translate(-50%, 0);
 
         <img id="teamLogoP2" class="teamLogo">
 
+        <span id="p2TeamNameLabel" class="teamNameLabel"></span>
         <span id="p2Wrapper" class="wrappers">
             <span id="p2Team" class="teams"></span>
             <span id="p2Name" class="names"></span>
