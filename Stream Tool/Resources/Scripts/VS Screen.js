@@ -56,6 +56,21 @@ function getData(scInfo) {
 	let p2Character = scInfo['p2Character'];
 	let p2Skin = scInfo['p2Skin'];
 
+	//singles, doubles (2v2) or crew battle
+	const matchType = scInfo['matchType'] || "singles";
+
+	//doubles and crew reuse the p1/p2 slots, they just put different texts in them
+	const side1 = getSideTexts(matchType, p1Name, p1Team,
+		scInfo['p1TeammateName'] || "", scInfo['teamName1'] || "");
+	const side2 = getSideTexts(matchType, p2Name, p2Team,
+		scInfo['p2TeammateName'] || "", scInfo['teamName2'] || "");
+	p1Name = side1.name; p1Team = side1.team;
+	p2Name = side2.name; p2Team = side2.team;
+
+	//the character line shows both team members when in doubles
+	const p1CharText = getCharText(matchType, p1Character, p1Skin, scInfo['p1TeammateCharacter']);
+	const p2CharText = getCharText(matchType, p2Character, p2Skin, scInfo['p2TeammateCharacter']);
+
 	let round = scInfo['round'];
 	let tournamentName = scInfo['tournamentName'];
 
@@ -80,15 +95,8 @@ function getData(scInfo) {
 
 
 		//change the player info character text
-		document.getElementById('p1CharInfo').textContent = p1Character;
-		document.getElementById('p2CharInfo').textContent = p2Character;
-		//sheik is complicated
-		if (p1Skin.includes("Sheik")) {
-			document.getElementById('p1CharInfo').textContent = "Sheik";
-		}
-		if (p2Skin.includes("Sheik")) {
-			document.getElementById('p2CharInfo').textContent = "Sheik";
-		}
+		document.getElementById('p1CharInfo').textContent = p1CharText;
+		document.getElementById('p2CharInfo').textContent = p2CharText;
 		//fade it in
 		fadeIn("#p1Info", introDelay+.15);
 		fadeIn("#p2Info", introDelay+.15);
@@ -199,22 +207,16 @@ function getData(scInfo) {
 				charaFadeIn("#charaP1");
 			});
 
-			//change the player info text if the character is different or if changing between Zelda and Sheik
-			if (p1CharacterPrev != p1Character ||
-				(p1CharacterPrev == "Zelda" && p1Skin.includes("Sheik")) ||
-				(p1Character == "Zelda" && p1SkinPrev.includes("Sheik"))) {
-				fadeOut('#p1Info', () => {
-					document.getElementById('p1CharInfo').textContent = p1Character;
-					//sheik is complicated
-					if (p1Skin.includes("Sheik")) {
-						document.getElementById('p1CharInfo').textContent = "Sheik";
-					}
-					fadeIn('#p1Info');
-				});
-			}
-			
 			p1CharacterPrev = p1Character;
 			p1SkinPrev = p1Skin;
+		}
+
+		//the character line also changes when the doubles teammate does
+		if (document.getElementById('p1CharInfo').textContent != p1CharText) {
+			fadeOut('#p1Info', () => {
+				document.getElementById('p1CharInfo').textContent = p1CharText;
+				fadeIn('#p1Info');
+			});
 		}
 
 		//same for player 2
@@ -224,20 +226,15 @@ function getData(scInfo) {
 				charaFadeIn("#charaP2");
 			});
 
-			if (p2CharacterPrev != p2Character ||
-				(p2CharacterPrev == "Zelda" && p2Skin.includes("Sheik")) ||
-				(p2Character == "Zelda" && p2SkinPrev.includes("Sheik"))) {
-				fadeOut('#p2Info', () => {
-					document.getElementById('p2CharInfo').textContent = p2Character;
-					if (p2Skin.includes("Sheik")) {
-						document.getElementById('p2CharInfo').textContent = "Sheik";
-					}
-					fadeIn('#p2Info');
-				});
-			}
-		
 			p2CharacterPrev = p2Character;
 			p2SkinPrev = p2Skin;
+		}
+
+		if (document.getElementById('p2CharInfo').textContent != p2CharText) {
+			fadeOut('#p2Info', () => {
+				document.getElementById('p2CharInfo').textContent = p2CharText;
+				fadeIn('#p2Info');
+			});
 		}
 
 
@@ -318,6 +315,30 @@ function getData(scInfo) {
 //did an image fail to load? this will be used to show nothing
 function showNothing(itemEL) {
 	itemEL.setAttribute('src', 'Resources/Literally Nothing.png');
+}
+
+//decides what the team/name slots of a side show for the current match type
+function getSideTexts(matchType, pName, pTeam, teammateName, teamName) {
+	if (matchType == "doubles") {
+		//an explicit team name wins, if not we just pair both players up
+		const pair = teammateName ? pName + " & " + teammateName : pName;
+		return {name: teamName || pair, team: ""};
+	}
+	if (matchType == "crew") {
+		//pName is whoever is repping the crew right now
+		return {name: pName, team: teamName};
+	}
+	return {name: pName, team: pTeam};
+}
+
+//the character name line, both members of the team when in doubles
+function getCharText(matchType, pCharacter, pSkin, teammateCharacter) {
+	//sheik is complicated
+	let charText = pSkin && pSkin.includes("Sheik") ? "Sheik" : pCharacter;
+	if (matchType == "doubles" && teammateCharacter) {
+		charText += " & " + teammateCharacter;
+	}
+	return charText;
 }
 
 //color change

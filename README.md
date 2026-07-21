@@ -1,4 +1,4 @@
-# Ultimate Stream Tool — V6.0.0
+# Ultimate Stream Tool — V7.1.0
 
 A desktop application for managing Smash Ultimate tournament livestream overlays. Built on Electron with a local HTTP server, it lets a streamer control OBS browser source overlays from a GUI or remotely from any device on the same network.
 
@@ -10,15 +10,53 @@ A desktop application for managing Smash Ultimate tournament livestream overlays
 - Per-player fields: **name**, **team tag**, **pronouns**, **character**, **skin**, **color**
 - **Player presets** — save, load, and delete named presets that store name, tag, pronouns, character, skin, seed, and country together
 - Typing a player name autocompletes from saved presets
+- The **preset browser** stays open after you pick a preset, so you can fill several slots in one visit — a brief toast confirms each pick
+- Close it with the **CLOSE** button at the bottom, the back arrow at the top, or `Esc`. Closing never clears the player fields
+- The **✕** beside the search box clears the search text without leaving the browser
+
+### Match Type — Singles / Doubles / Crew Battle / Wins-Losses
+A **Match Type** dropdown (populated from `MatchTypes.json`, sitting to the right of the Tournament Name) switches the scoreboard between four shapes. It is fully **independent of the Best Of selector** — a crew battle can still be "Best of 5" if you want that shown.
+
+**Singles** *(default)* — unchanged behaviour, one player per side.
+
+**Doubles (2v2)** — each side gains a **teammate** name, character and skin, plus an optional **team name**:
+- One shared score and W/L per side, matching standard doubles bracket conventions
+- Each teammate gets a **full player block** — save-preset button, tag, pronouns, name, seed, country and their own character picker — placed under the main player's character picker. Character pickers shrink in doubles to fit two per side
+- The only field teammates don't get is the **colour slot**, since the colour drives that side's shared overlay bar
+- The **preset browser** gains two extra load buttons, ordered `P1 · P3 · P2 · P4` to match the usual doubles port convention — teams are **P1 + P3** vs **P2 + P4**, so P3 loads into Player 1's teammate and P4 into Player 2's teammate
+- The scoreboard shows both stock icons stacked in the character slot
+- The name reads `Player & Teammate`, or the team name instead if you fill one in
+- The VS Screen character line reads `Character & Character`
+
+**Crew Battle** — a lightweight reskin, not a roster tracker:
+- Each side gets a **crew name** bar and a manual **stock counter**, sitting next to the wins counter and labelled `Wins` / `Stocks` so the two are never confused
+- Selecting the mode sets the round to the **Crew Battle** preset, since a crew battle isn't a bracket round. Switching back to another match type returns the round to Winners Round 1 — unless you picked a different round in the meantime, which is left alone
+- The stock count replaces the score in the same spot on the scoreboard — you never see both
+- The regular player fields *are* the currently active representative; retype them when a crew member is swapped in
+- There is deliberately no ordered roster, elimination tracking, or auto-advance
+
+**Wins / Losses** — a scoreboard showing a running win/loss tally instead of two players:
+- Fills the name boxes with `Wins` / `Losses` (or `W` / `L` when *Abbreviate round names* is on) and clears the round
+- **Clears all player info** — tag, pronouns, seed, country and character are wiped so nothing from the last match carries onto the standings board
+- **Strips each side down to the name, its colour swatch and the count** — the character picker, the character render, tag, pronouns, seed, country, flag and the preset button are all hidden, and what's left is centred in the panel
+- Switching away to any other match type clears those placeholder names again and puts the round back to **Winners Round 1**, since entering the mode blanked it
+- Same behaviour as the older `WL` entry in the Best Of dropdown, now reachable from the Match Type selector
+
+The app window grows and shrinks to fit whichever match type is selected, so no mode leaves dead space behind.
 
 ### Scores & Match State
-- Score counters for both players with increment / decrement
+- Score counters for both players with `+` / `−` buttons in every match type
 - **Win/Loss (W/L)** indicators for Grand Finals bracket tracking
 - **Series score** (game count) displayed on overlays separately from match score
-- **Best Of mode** cycling button — cycles forward or backward through: Bo3 · Bo5 · BoX · Ft5 · Ft10 · FtX · WL · CB
+- **Best Of mode** dropdown populated from `BestOfModes.json`: Bo1 · Bo3 · Bo5 · BoX · Ft5 · Ft10 · FtX · WL · CB (Bo3 stays the default)
 - Each mode maps to a display prefix (e.g. "Best of", "First To") defined in `BestOfModes.json`
+- The `CB` and `WL` entries here are legacy — the **Match Type** dropdown is what actually turns on crew battle and wins/losses mode. Both still work and don't conflict
 
 ### Round Names
+The round **controls** are shared state, not a per-device preference — `ScoreboardInfo.json` stores which mode is active (`roundMode`), the selected preset (`roundName`), its number (`roundNumber`) and the custom text (`roundCustom`) alongside the finished `round` string. Whichever GUI presses **UPDATE**, the other one lands on the same controls at the next poll, so one can't sit on the preset dropdown showing a stale round while the other types custom text.
+
+Turning *Use custom round* back off returns the dropdown to **Winners Round 1** (or **Crew Battle** in crew battle mode) rather than leaving the stale selection sitting behind the custom box.
+
 - **Preset mode** (default) — dropdown populated from `RoundNames.json`:
   - Winners bracket: Winners Round, Winners Pre-Top, Winners Top, Winners Quarters, Winners Semis, Winners Finals
   - Losers bracket: Losers Round, Losers Pre-Top, Losers Top, Losers Quarters, Losers Semis, Losers Finals
@@ -38,12 +76,17 @@ A desktop application for managing Smash Ultimate tournament livestream overlays
 
 ### start.gg Import
 - Enter a start.gg **API token** and **event slug** to bulk-import all entrants from a bracket
-- Upserts tag, seed, and country into local player presets — preserves existing character/skin/pronoun data
+- Upserts tag, pronouns, seed, and country into local player presets — preserves existing character/skin data
+- Pronouns come from each entrant's start.gg profile, and only overwrite what you already have if start.gg actually has a value
 - Reports how many players were found and how many were new vs. updated
 - Imported players are available for autocomplete in the name fields
 
+### Misc Settings
+- **Rescan Presets** — re-reads `PlayerPresets.json` from disk and redraws the preset browser, for when the file was hand-edited or a preset was saved from a remote GUI on another device
+
 ### Caster Info
-- Two caster slots, each with **name**, **Twitter**, and **Twitch** handle
+- Starts with two caster slots; use the **＋🎤** button to add more (up to 10 are written out), and the **−** on a row to remove it
+- Each slot has a **name**, plus **Twitter** and **Twitch** handles behind the microphone button
 - The main scoreboard overlay alternates between Twitter and Twitch on a timed interval
 
 ### Overlays (OBS Browser Sources — 1920×1080)
@@ -53,18 +96,21 @@ A desktop application for managing Smash Ultimate tournament livestream overlays
 - **Watherum Scoreboard.html** — alternate scoreboard layout with flags and seeds
 - **Capital Region Scoreboard.html** — Capital Region branded scoreboard with flags and seeds
 
+**Match type support:** Game Scoreboard and VS Screen follow the Match Type — doubles stacks both stock icons and shows `Player & Teammate` (or the team name), crew shows the crew name plus the active player with stocks in place of the score. Caster Screen needs no changes since it doesn't show player info. The Watherum and Capital Region scoreboards are unchanged and still show only the first player of each side in doubles and crew. Teammate tag, pronouns, seed and country are written to the JSON and Simple Texts but aren't drawn on the built-in overlays.
+
 All overlays poll for data changes every 500 ms and update automatically — no refresh required.
 
 ### Remote Control
-- The app runs a local HTTP server on port **1111** (configurable in Settings)
-- The full GUI is accessible from any device on the same network at `http://<your-ip>:1111`
+- The app runs a local HTTP server on port **1111**, automatically moving to the next free port if that one is taken
+- The full GUI is accessible from any device on the same network at `http://<your-ip>:1111` — Settings shows the exact address and a QR code
 - The remote GUI is mobile-optimized with a sticky update bar, full-screen panels, and large score +/− buttons
+- On a laptop or desktop browser the interface **fills the whole window** instead of sitting in the top corner: everything scales up, and the player panels take the leftover height so the update bar sits on the bottom edge. The same happens in the app window when you drag it larger. Phones keep the stacked mobile layout
 
 ### Keyboard Shortcuts
 | Shortcut | Action |
 |---|---|
 | `Enter` | Update scoreboard |
-| `ESC` | Clear player info |
+| `ESC` | Closes the preset browser, character roster or Settings if one is open — otherwise clears player info |
 | `Ctrl+Shift+I` | Open/close developer tools |
 | `Ctrl+F5` | Hard-reload the interface |
 
@@ -93,13 +139,28 @@ All overlays poll for data changes every 500 ms and update automatically — no 
 | Write simple texts | Writes individual `.txt` files for OBS text sources |
 | Always on top | Keeps the app window above other windows |
 | Resizable window | Allows the app window to be freely resized |
-| Port | HTTP server port (default 1111) |
+| Restore default dimensions | Resets the window to the default size for the current match type |
 | start.gg API Token | Token for the start.gg import feature |
 
 All settings are persisted across sessions.
 
 ### Simple Texts
 When **Write simple texts** is enabled, the app writes individual `.txt` files to `Stream Tool/Resources/Texts/Simple Texts/` for every scoreboard field — usable as OBS text sources without a browser source.
+
+The doubles and crew fields are only written by the match types that use them:
+
+| File | Written when |
+|---|---|
+| `Player N Teammate.txt` | Match Type is Doubles |
+| `Player N Teammate Character.txt` | Match Type is Doubles |
+| `Player N Teammate Tag.txt` | Match Type is Doubles |
+| `Player N Teammate Pronouns.txt` | Match Type is Doubles |
+| `Player N Teammate Seed.txt` | Match Type is Doubles |
+| `Player N Teammate Country.txt` | Match Type is Doubles |
+| `Team 1 Name.txt`, `Team 2 Name.txt` | Match Type is Doubles or Crew Battle |
+| `Crew Stocks 1.txt`, `Crew Stocks 2.txt` | Match Type is Crew Battle |
+
+*(`N` is 1 or 2 — the teammate files exist for both sides.)*
 
 ### Copy Match to Clipboard
 The **Copy match info** button in Settings copies a formatted match string to the clipboard:
@@ -130,6 +191,7 @@ Two OBS transitions are included in `Resources/OBS Transitions/`:
 
 - Edit `RoundNames.json` to add, remove, or reorder round options.
 - Edit `BestOfModes.json` to change the display name or prefix for each Best Of mode.
+- Edit `MatchTypes.json` to rename the Singles / Doubles / Crew Battle options.
 - Replace overlay images in `Resources/Overlay/` to reskin the scoreboards.
 - Replace character renders in `Resources/Characters/` (WebP format).
 - The overlay HTML/JS files are plain and fully editable.
@@ -232,9 +294,19 @@ The settings panel includes a **start.gg Import** section that can bulk-populate
 2. Enter the tournament event slug in the format `tournament/your-tournament-name/event/your-event-name` (e.g. `tournament/genesis-10/event/ultimate-singles`).
 3. Click **Fetch Data**.
 
-On a successful fetch the tool pages through all entrants (200 at a time) and upserts them all into your local player presets — updating tag, seed, and country for existing presets while preserving character/skin/pronoun data, and creating a new preset for any player not already saved. A status line reports how many players were found and how many were new vs. updated.
+On a successful fetch the tool pages through all entrants (200 at a time) and upserts them all into your local player presets — updating tag, pronouns, seed, and country for existing presets while preserving character/skin data, and creating a new preset for any player not already saved. A status line reports how many players were found and how many were new vs. updated.
 
-Once fetched, typing a player name into either name field will automatically fill in their tag, seed, and country if they appear in the imported data.
+Pronouns are read from each entrant's start.gg profile (`genderPronoun`). Since not everyone fills that field in, an empty value never overwrites a pronoun you already had saved or typed in.
+
+Once fetched, typing a player name into either name field will automatically fill in their tag, pronouns, seed, and country if they appear in the imported data.
+
+---
+
+### Misc Settings
+
+#### Rescan Presets
+
+Player presets all live in a single `PlayerPresets.json`, which the app loads when it starts. **Settings → Misc Settings → Rescan Presets** re-reads that file and redraws the preset browser, so you can pick up changes made outside this window — a preset saved from the remote GUI on a phone, or a hand edit to the JSON — without restarting the app. The status line next to the button reports how many presets were loaded.
 
 ---
 

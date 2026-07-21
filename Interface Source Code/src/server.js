@@ -45,6 +45,12 @@ const blankScoreboard = {
     p2Name: "", p2Team: "", p2Pron: "", p2NScore: "0",
     p2Character: "Random", p2Skin: "1", p2Color: "Blue", p2WL: "",
     p2Seed: "", p2Country: "",
+    matchType: "singles",
+    p1TeammateName: "", p1TeammateCharacter: "Random", p1TeammateSkin: "1",
+    p1TeammateTag: "", p1TeammatePron: "", p1TeammateSeed: "", p1TeammateCountry: "",
+    p2TeammateName: "", p2TeammateCharacter: "Random", p2TeammateSkin: "1",
+    p2TeammateTag: "", p2TeammatePron: "", p2TeammateSeed: "", p2TeammateCountry: "",
+    teamName1: "", teamName2: "", crewStocks1: "0", crewStocks2: "0",
     bestOf: "Bo3", round: "", format: "0", tournamentName: "",
     caster1Name: "", caster1Twitter: "", caster1Twitch: "",
     caster2Name: "", caster2Twitter: "", caster2Twitch: "",
@@ -108,6 +114,26 @@ app.post('/api/scoreboard', (req, res) => {
             fs.writeFileSync(path.join(mainPath, "Simple Texts", "Score 1.txt"), scoreboardJson.p1NScore || "0");
             fs.writeFileSync(path.join(mainPath, "Simple Texts", "Score 2.txt"), scoreboardJson.p2NScore || "0");
 
+            // doubles teammates and crew battle info, only written by the modes that use them
+            if (scoreboardJson.matchType === "doubles") {
+                for (const pn of [1, 2]) {
+                    fs.writeFileSync(path.join(mainPath, "Simple Texts", `Player ${pn} Teammate.txt`),           scoreboardJson[`p${pn}TeammateName`]      || "");
+                    fs.writeFileSync(path.join(mainPath, "Simple Texts", `Player ${pn} Teammate Character.txt`), scoreboardJson[`p${pn}TeammateCharacter`] || "");
+                    fs.writeFileSync(path.join(mainPath, "Simple Texts", `Player ${pn} Teammate Tag.txt`),       scoreboardJson[`p${pn}TeammateTag`]       || "");
+                    fs.writeFileSync(path.join(mainPath, "Simple Texts", `Player ${pn} Teammate Pronouns.txt`),  scoreboardJson[`p${pn}TeammatePron`]      || "");
+                    fs.writeFileSync(path.join(mainPath, "Simple Texts", `Player ${pn} Teammate Seed.txt`),      scoreboardJson[`p${pn}TeammateSeed`]      || "");
+                    fs.writeFileSync(path.join(mainPath, "Simple Texts", `Player ${pn} Teammate Country.txt`),   scoreboardJson[`p${pn}TeammateCountry`]   || "");
+                }
+            }
+            if (scoreboardJson.teamName1 !== undefined || scoreboardJson.teamName2 !== undefined) {
+                fs.writeFileSync(path.join(mainPath, "Simple Texts", "Team 1 Name.txt"), scoreboardJson.teamName1 || "");
+                fs.writeFileSync(path.join(mainPath, "Simple Texts", "Team 2 Name.txt"), scoreboardJson.teamName2 || "");
+            }
+            if (scoreboardJson.matchType === "crew") {
+                fs.writeFileSync(path.join(mainPath, "Simple Texts", "Crew Stocks 1.txt"), String(scoreboardJson.crewStocks1 ?? "0"));
+                fs.writeFileSync(path.join(mainPath, "Simple Texts", "Crew Stocks 2.txt"), String(scoreboardJson.crewStocks2 ?? "0"));
+            }
+
             fs.writeFileSync(path.join(mainPath, "Simple Texts", "Round.txt"), scoreboardJson.round || "");
             fs.writeFileSync(path.join(mainPath, "Simple Texts", "Format.txt"), scoreboardJson.format || "");
             fs.writeFileSync(path.join(mainPath, "Simple Texts", "bestOf.txt"), scoreboardJson.bestOf || "");
@@ -154,7 +180,7 @@ app.post('/api/startgg', async (req, res) => {
                 pageInfo { totalPages }
                 nodes {
                     initialSeedNum
-                    participants { gamerTag prefix user { location { country } } }
+                    participants { gamerTag prefix user { location { country } genderPronoun } }
                 }
             }
         }

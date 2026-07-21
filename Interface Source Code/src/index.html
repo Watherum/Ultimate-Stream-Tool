@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Ultimate Stream Tool V5.0.0</title>
+    <title>Ultimate Stream Tool V7.1.0</title>
     <link rel="stylesheet" href="index.css">
     <script>if (typeof module === 'object') {window.module = module; module = undefined;}</script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
@@ -33,6 +33,9 @@
             <div class="pEditor" id="p1Editor">
 
               <div id="p1Info" class="pInfo">
+                <div class="pInfoRow teamNameRow" id="p1TeamNameRow" style="display:none;">
+                  <input type="text" id="teamName1" class="textInput mousetrap teamNameInput" tabindex="-1" placeholder="Team 1" title="Optional team/crew name. Doubles falls back to 'Player &amp; Teammate' if left blank." spellcheck="false">
+                </div>
                 <div class="pInfoRow">
                   <button id="savePresetP1" class="presetSaveBtn mousetrap" tabindex="-1" title="Save player as preset">
                     <svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor"><path d="M17 3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V7l-4-4zm-5 16a3 3 0 1 1 0-6 3 3 0 0 1 0 6zm3-10H5V5h10v4z"/></svg>
@@ -53,7 +56,7 @@
                   </div>
                 </div>
               </div>
-  
+
               <div class="charInfo">
 
                 <div class="charSelector" title="Everyone is here!">
@@ -69,12 +72,50 @@
 
               </div>
 
+              <!-- P3: player 1's doubles teammate -->
+              <div class="pInfo teammateBlock" id="p1TeammateInfo" style="display:none;">
+                <div class="pInfoRow">
+                  <button id="savePresetP1Teammate" class="presetSaveBtn mousetrap" tabindex="-1" title="Save teammate as preset">
+                    <svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor"><path d="M17 3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V7l-4-4zm-5 16a3 3 0 1 1 0-6 3 3 0 0 1 0 6zm3-10H5V5h10v4z"/></svg>
+                  </button>
+                  <input type="text" id="p1TeammateTag" class="textInput mousetrap" tabindex="-1" placeholder="Tag" title="Insert the teammate's tag/team/sponsor here" spellcheck="false">
+                  <input type="text" id="p1TeammatePron" class="textInput mousetrap" tabindex="-1" placeholder="Pron" title="Insert the teammate's pronoun here." spellcheck="false">
+                  <input type="text" id="p1TeammateName" class="textInput mousetrap" tabindex="-1" placeholder="Teammate" title="Insert P1's teammate name here" spellcheck="false">
+                </div>
+                <div class="pInfoRow">
+                  <input type="number" id="p1TeammateSeed" class="textInput mousetrap seedInput" tabindex="-1" placeholder="Seed" title="Teammate seed" min="1">
+                  <img id="p1TeammateFlag" class="playerFlag" src="" alt="" style="display:none;">
+                  <input type="text" id="p1TeammateCountry" class="textInput mousetrap countryInput" tabindex="-1" placeholder="Country" title="Teammate country" spellcheck="false">
+                </div>
+              </div>
+
+              <div class="charInfo teammateBlock" id="p1TeammateCharInfo" style="display:none;">
+
+                <div class="charSelector" title="Everyone is here!">
+                  <img class="charSelectorImg" id="p1TeammateCharSelector" tabindex="-1" title="Teammate's character"/>
+                </div>
+
+                <div>
+                  <div class="skinSelector" id="teammateSkinSelectorP1">
+                    <div id="teammateSkinListP1"></div>
+                  </div>
+                </div>
+
+              </div>
+
               <div class="scoreInfo">
 
-<button type="button" id="p1ScoreMinus" class="mobileScoreBtn" tabindex="-1">−</button>
+                <span class="counterLabel" id="p1ScoreLabel" style="display:none;">Wins</span>
+                <button type="button" id="p1ScoreMinus" class="mobileScoreBtn" tabindex="-1">−</button>
                 <input type="number" min= "0" id="p1NScore" class="textInput mousetrap" tabindex="3" placeholder="Score 1" title="Insert P1's score here" spellcheck="false">
                 <button type="button" id="p1ScorePlus" class="mobileScoreBtn" tabindex="-1">+</button>
 
+                <span class="crewStockBox" id="p1CrewStockBox" style="display:none;">
+                  <span class="counterLabel">Stocks</span>
+                  <button type="button" id="p1StockMinus" class="crewStockBtn" tabindex="-1">−</button>
+                  <input type="number" min="0" id="crewStocks1" class="textInput mousetrap crewStockInput" tabindex="-1" value="0" title="Crew stocks remaining">
+                  <button type="button" id="p1StockPlus" class="crewStockBtn" tabindex="-1">+</button>
+                </span>
 
                 <div class="wlButtons">
                   <div id="p1W" class="wlBox">[W]</div>
@@ -111,6 +152,9 @@
             <div class="pEditor">
 
               <div id="p2Info" class="pInfo">
+                <div class="pInfoRow teamNameRow" id="p2TeamNameRow" style="display:none;">
+                  <input type="text" id="teamName2" class="textInput mousetrap teamNameInput" tabindex="-1" placeholder="Team 2" title="Optional team/crew name. Doubles falls back to 'Player &amp; Teammate' if left blank." spellcheck="false">
+                </div>
                 <div class="pInfoRow">
                   <button id="savePresetP2" class="presetSaveBtn mousetrap" tabindex="-1" title="Save player as preset">
                     <svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor"><path d="M17 3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V7l-4-4zm-5 16a3 3 0 1 1 0-6 3 3 0 0 1 0 6zm3-10H5V5h10v4z"/></svg>
@@ -131,7 +175,7 @@
                   </div>
                 </div>
               </div>
-  
+
               <div class="charInfo">
 
                 <div class="charSelector" title="Everyone is here!">
@@ -147,11 +191,50 @@
 
               </div>
 
+              <!-- P4: player 2's doubles teammate -->
+              <div class="pInfo teammateBlock" id="p2TeammateInfo" style="display:none;">
+                <div class="pInfoRow">
+                  <button id="savePresetP2Teammate" class="presetSaveBtn mousetrap" tabindex="-1" title="Save teammate as preset">
+                    <svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor"><path d="M17 3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V7l-4-4zm-5 16a3 3 0 1 1 0-6 3 3 0 0 1 0 6zm3-10H5V5h10v4z"/></svg>
+                  </button>
+                  <input type="text" id="p2TeammateTag" class="textInput mousetrap" tabindex="-1" placeholder="Tag" title="Insert the teammate's tag/team/sponsor here" spellcheck="false">
+                  <input type="text" id="p2TeammatePron" class="textInput mousetrap" tabindex="-1" placeholder="Pron" title="Insert the teammate's pronoun here." spellcheck="false">
+                  <input type="text" id="p2TeammateName" class="textInput mousetrap" tabindex="-1" placeholder="Teammate" title="Insert P2's teammate name here" spellcheck="false">
+                </div>
+                <div class="pInfoRow">
+                  <input type="number" id="p2TeammateSeed" class="textInput mousetrap seedInput" tabindex="-1" placeholder="Seed" title="Teammate seed" min="1">
+                  <img id="p2TeammateFlag" class="playerFlag" src="" alt="" style="display:none;">
+                  <input type="text" id="p2TeammateCountry" class="textInput mousetrap countryInput" tabindex="-1" placeholder="Country" title="Teammate country" spellcheck="false">
+                </div>
+              </div>
+
+              <div class="charInfo teammateBlock" id="p2TeammateCharInfo" style="display:none;">
+
+                <div class="charSelector" title="Everyone is here!">
+                  <img class="charSelectorImg" id="p2TeammateCharSelector" tabindex="-1" title="Teammate's character"/>
+                </div>
+
+                <div>
+                  <div class="skinSelector" id="teammateSkinSelectorP2">
+                    <div id="teammateSkinListP2"></div>
+                  </div>
+                </div>
+
+              </div>
+
               <div class="scoreInfo">
 
-<button type="button" id="p2ScoreMinus" class="mobileScoreBtn" tabindex="-1">−</button>
+                <span class="counterLabel" id="p2ScoreLabel" style="display:none;">Wins</span>
+                <button type="button" id="p2ScoreMinus" class="mobileScoreBtn" tabindex="-1">−</button>
                 <input type="number" min= "0" id="p2NScore" class="textInput mousetrap" tabindex="3" placeholder="Score 2" title="Insert P2's score here" spellcheck="false">
                 <button type="button" id="p2ScorePlus" class="mobileScoreBtn" tabindex="-1">+</button>
+
+                <span class="crewStockBox" id="p2CrewStockBox" style="display:none;">
+                  <span class="counterLabel">Stocks</span>
+                  <button type="button" id="p2StockMinus" class="crewStockBtn" tabindex="-1">−</button>
+                  <input type="number" min="0" id="crewStocks2" class="textInput mousetrap crewStockInput" tabindex="-1" value="0" title="Crew stocks remaining">
+                  <button type="button" id="p2StockPlus" class="crewStockBtn" tabindex="-1">+</button>
+                </span>
 
                 <div class="wlButtons">
                   <div id="p2W" class="wlBox">[W]</div>
@@ -177,7 +260,10 @@
             <select id="roundSelect" class="textInput mousetrap" style="display:none;"></select>
             <input type="number" min="1" id="roundNumber" class="textInput mousetrap" placeholder="1" style="display:none;">
           </div>
-          <input type="text" id="tournamentName" class="textInput mousetrap" placeholder="Tournament Name" spellcheck="false">
+          <div id="tournamentRegion">
+            <input type="text" id="tournamentName" class="textInput mousetrap" placeholder="Tournament Name" spellcheck="false">
+            <select id="matchTypeSelect" class="textInput mousetrap" title="Singles, Doubles (2v2), Crew Battle or Wins / Losses"></select>
+          </div>
         </div>
 
         <div id="casterInfo">
@@ -299,6 +385,19 @@ They will always appear when typing 'Grand' on the round box.">
               </div>
             </div>
           </div>
+
+          <div class="settingBox" style="padding-top:8px;">
+            <div class="settingsText" style="font-weight:bold; padding-bottom:2px;">Misc Settings</div>
+          </div>
+          <div class="settingBox" id="miscSection" title="Reloads the player presets from disk, in case PlayerPresets.json was edited by hand or from another device.">
+            <div style="width:100%">
+              <div style="font-size:11px; color:var(--text2); margin-bottom:6px;">If you've manually edited <span style="font-family:monospace; color:var(--text1);">PlayerPresets.json</span> by hand, rescan the presets.</div>
+              <div style="display:flex; gap:6px; align-items:center;">
+                <button id="rescanPresetsButt" tabindex="-1">Rescan Presets</button>
+                <span id="rescanPresetsStatus" style="font-size:11px; color:var(--text2);"></span>
+              </div>
+            </div>
+          </div>
           <!-- <div class="settingBox" id="nsTool" title="Forces to use numbers instead
           of squares to score">
                       <input type="checkbox" id="forceNS" class="settingsCheck" tabindex="-1">
@@ -322,8 +421,10 @@ They will always appear when typing 'Grand' on the round box.">
             </svg>
           </div>
           <input type="text" id="presetSearchInp" placeholder="Search presets..." autocomplete="off">
+          <button id="clearPresetSearch" title="Clear search">✕</button>
         </div>
         <div id="presetListContainer"></div>
+        <button id="closePresetPanelBottom" title="Close the preset browser [Shortcut: Esc]">CLOSE</button>
       </div>
 
       <div id="goBack"></div>

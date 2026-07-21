@@ -1,0 +1,6 @@
+[
+    { "name": "Singles",       "value": "singles" },
+    { "name": "Doubles 2v2",   "value": "doubles" },
+    { "name": "Crew Battle",   "value": "crew" },
+    { "name": "Wins / Losses", "value": "wl" }
+]

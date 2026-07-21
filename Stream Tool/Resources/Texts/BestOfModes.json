@@ -1,4 +1,5 @@
 [
+    { "name": "Best of 1",     "value": "Bo1",  "prefix": "Best of " },
     { "name": "Best of 3",     "value": "Bo3",  "prefix": "Best of " },
     { "name": "Best of 5",     "value": "Bo5",  "prefix": "Best of " },
     { "name": "Best of X",     "value": "BoX",  "prefix": "Best of " },

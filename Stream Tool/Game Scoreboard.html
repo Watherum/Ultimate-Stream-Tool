@@ -97,13 +97,33 @@ transform: translate(-50%, 0);
             height: 50px;
             opacity: 0;
         }
-        #p1Character { 
+        #p1Character {
             left: 240px;
             top: 345px;
         }
         #p2Character {
             right: -296px;
             top: 345px;
+        }
+
+        /* doubles: both team members share the single character slot, stacked */
+        .teammateCharacter {
+            display: none;
+        }
+        #p1TeammateCharacter {
+            left: 240px;
+            top: 375px;
+        }
+        #p2TeammateCharacter {
+            right: -296px;
+            top: 375px;
+        }
+        body.doublesMode .pCharacter {
+            width: 30px;
+            height: 30px;
+        }
+        body.doublesMode .teammateCharacter {
+            display: block;
         }
 
 
@@ -459,6 +479,7 @@ transform: translate(-50%, 0);
         <img class="sagaIcon" id="sagaIconP1">
         <div class="pCharaMask">
             <img id="p1Character" class="pCharacter">
+            <img id="p1TeammateCharacter" class="pCharacter teammateCharacter">
         </div>
 
         <img id="teamLogoP1" class="teamLogo">
@@ -507,6 +528,7 @@ transform: translate(-50%, 0);
         <div class="pCharaMask">
             <div class="absol">
                 <img id="p2Character" class="pCharacter"/>
+                <img id="p2TeammateCharacter" class="pCharacter teammateCharacter"/>
             </div>
         </div>
 

@@ -25,11 +25,35 @@ ipcMain.on('set-always-on-top', (event, value) => {
 ipcMain.on('set-resizable', (event, value) => {
   mainWindowRef?.setResizable(value);
 });
+//doubles/crew add rows to the player region, so the window height follows the match
+//type exactly - growing for the extra rows and shrinking back so no dead space is left
+let currentExtraHeight = 0;
+
+const heightAdjustment = () => (process.platform === 'linux' ? 50 : 0);
+
+function applyWindowHeight(extra) {
+  if (!mainWindowRef) return;
+  currentExtraHeight = extra;
+
+  const adj = heightAdjustment();
+  const wanted = BASE_HEIGHT + adj + extra;
+  //lower the minimum first, or the window can't shrink back down
+  mainWindowRef.setMinimumSize(BASE_WIDTH + adj, wanted);
+
+  //resizing a maximized window would restore it, so leave it alone
+  if (mainWindowRef.isMaximized() || mainWindowRef.isFullScreen()) return;
+
+  const [width, height] = mainWindowRef.getSize();
+  if (height !== wanted) mainWindowRef.setSize(width, wanted);
+}
+
+ipcMain.on('set-extra-height', (event, extra) => applyWindowHeight(extra || 0));
+
 ipcMain.on('restore-window-size', () => {
-  const isLinux = process.platform === 'linux';
-  const adj = isLinux ? 50 : 0;
-  mainWindowRef?.setMinimumSize(BASE_WIDTH + adj, BASE_HEIGHT + adj);
-  mainWindowRef?.setSize(BASE_WIDTH + adj, BASE_HEIGHT + adj);
+  if (!mainWindowRef) return;
+  const adj = heightAdjustment();
+  //back to the default size for whatever match type is currently up
+  mainWindowRef.setSize(BASE_WIDTH + adj, BASE_HEIGHT + adj + currentExtraHeight);
 });
 
 const createWindow = (port) => {

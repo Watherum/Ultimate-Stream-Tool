@@ -9,7 +9,9 @@ let introDelay = .8; //all animations will get this delay when the html loads (u
 //to avoid the code constantly running the same method over and over
 let p1CharacterPrev, p1SkinPrev, p1ScorePrev, p1ColorPrev, p1wlPrev;
 let p2CharacterPrev, p2SkinPrev, p2ScorePrev, p2ColorPrev, p2wlPrev;
-let bestOfPrev;
+let p1TeammateCharacterPrev, p1TeammateSkinPrev;
+let p2TeammateCharacterPrev, p2TeammateSkinPrev;
+let bestOfPrev, matchTypePrev;
 
 //max text sizes (used when resizing back)
 const roundSize = '32px';
@@ -72,6 +74,28 @@ async function getData(scInfo) {
 
 	let p1NScore = scInfo ['p1NScore'];
 	let p2NScore = scInfo ['p2NScore'];
+
+	//singles, doubles (2v2) or crew battle
+	const matchType = scInfo['matchType'] || "singles";
+
+	const p1TeammateCharacter = scInfo['p1TeammateCharacter'] || "Random";
+	const p1TeammateSkin = scInfo['p1TeammateSkin'] || "1";
+	const p2TeammateCharacter = scInfo['p2TeammateCharacter'] || "Random";
+	const p2TeammateSkin = scInfo['p2TeammateSkin'] || "1";
+
+	//doubles and crew reuse the p1/p2 slots, they just put different texts in them
+	const side1 = getSideTexts(matchType, p1Name, p1Team, p1Pron,
+		scInfo['p1TeammateName'] || "", scInfo['teamName1'] || "");
+	const side2 = getSideTexts(matchType, p2Name, p2Team, p2Pron,
+		scInfo['p2TeammateName'] || "", scInfo['teamName2'] || "");
+	p1Name = side1.name; p1Team = side1.team; p1Pron = side1.pron;
+	p2Name = side2.name; p2Team = side2.team; p2Pron = side2.pron;
+
+	//in a crew battle the stock count takes over the score display
+	if (matchType == "crew") {
+		p1NScore = String(scInfo['crewStocks1'] ?? "0");
+		p2NScore = String(scInfo['crewStocks2'] ?? "0");
+	}
 
 	let round = scInfo['round'];
 	let bestOf = scInfo['bestOf'];
@@ -163,6 +187,10 @@ async function getData(scInfo) {
 			//lets delay everything that comes after this so it shows after the intro
 			introDelay = 2.6;
 		}
+
+		//set the layout for the match type before anything gets faded in
+		applyMatchType(matchType);
+		matchTypePrev = matchType;
 
 		//finally out of the intro, now lets start with player 1 first
 		//update player name and team name texts
@@ -295,12 +323,46 @@ async function getData(scInfo) {
 		fadeIn("#teamLogoP2");
 
 
+		//the doubles teammates, sharing the character slot with their partner
+		await updateChar(p1TeammateCharacter, p1TeammateSkin, 'p1TeammateCharacter');
+		await updateChar(p2TeammateCharacter, p2TeammateSkin, 'p2TeammateCharacter');
+		p1TeammateCharacterPrev = p1TeammateCharacter;
+		p1TeammateSkinPrev = p1TeammateSkin;
+		p2TeammateCharacterPrev = p2TeammateCharacter;
+		p2TeammateSkinPrev = p2TeammateSkin;
+		if (matchType == "doubles") {
+			gsap.fromTo(".teammateCharacter",
+				{x: pMove},
+				{delay: introDelay, x: 0, opacity: 1, ease: "power2.out", duration: fadeInTime});
+		}
+
+
 		startup = false; //next time we run this function, it will skip all we just did
 	}
 
 	//now things that will happen constantly
 	else {
-		
+
+		//swapping between singles, doubles and crew changes the whole layout
+		if (matchTypePrev != matchType) {
+			applyMatchType(matchType);
+			gsap.to(".teammateCharacter",
+				{opacity: matchType == "doubles" ? 1 : 0, ease: "power2.out", duration: fadeInTime});
+			matchTypePrev = matchType;
+		}
+
+		//the doubles teammate portraits
+		if (p1TeammateCharacterPrev != p1TeammateCharacter || p1TeammateSkinPrev != p1TeammateSkin) {
+			updateTeammateChar(1, p1TeammateCharacter, p1TeammateSkin, matchType);
+			p1TeammateCharacterPrev = p1TeammateCharacter;
+			p1TeammateSkinPrev = p1TeammateSkin;
+		}
+		if (p2TeammateCharacterPrev != p2TeammateCharacter || p2TeammateSkinPrev != p2TeammateSkin) {
+			updateTeammateChar(2, p2TeammateCharacter, p2TeammateSkin, matchType);
+			p2TeammateCharacterPrev = p2TeammateCharacter;
+			p2TeammateSkinPrev = p2TeammateSkin;
+		}
+
 	//player 1 time!
 	if (document.getElementById('p1Name').textContent != p1Name ||
 	document.getElementById('p1Team').textContent != p1Team ||
@@ -527,6 +589,36 @@ async function getData(scInfo) {
 //did an image fail to load? this will be used to show nothing
 function showNothing(itemEL) {
 	itemEL.setAttribute('src', 'Resources/Literally Nothing.png');
+}
+
+
+//decides what the team/name/pronoun slots of a side show for the current match type
+function getSideTexts(matchType, pName, pTeam, pPron, teammateName, teamName) {
+	if (matchType == "doubles") {
+		//an explicit team name wins, if not we just pair both players up
+		const pair = teammateName ? pName + " & " + teammateName : pName;
+		return {name: teamName || pair, team: "", pron: ""};
+	}
+	if (matchType == "crew") {
+		//pName is whoever is repping the crew right now
+		return {name: pName, team: teamName, pron: pPron};
+	}
+	return {name: pName, team: pTeam, pron: pPron};
+}
+
+//makes room for the teammate portraits when in doubles
+function applyMatchType(matchType) {
+	document.body.classList.toggle('doublesMode', matchType == "doubles");
+}
+
+//teammate portrait change
+function updateTeammateChar(pNum, pCharacter, pSkin, matchType) {
+	fadeOut("#p" + pNum + "TeammateCharacter", () => {
+		updateChar(pCharacter, pSkin, 'p' + pNum + 'TeammateCharacter');
+		if (matchType == "doubles") {
+			fadeIn("#p" + pNum + "TeammateCharacter");
+		}
+	});
 }
 
 

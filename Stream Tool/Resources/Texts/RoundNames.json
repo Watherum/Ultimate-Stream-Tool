@@ -60,6 +60,9 @@
         "name": "Exhibition Match"
     },
     {
+        "name": "Crew Battle"
+    },
+    {
         "name": "Custom Text",
         "customText": true
     },
