@@ -8,7 +8,10 @@ if (isElectron) {
     ({ ipcRenderer } = require('electron'));
 
     const isDev = process.execPath.includes('node_modules');
-    if (isDev) {
+    if (process.env.USTOOL_BASE_DIR) {
+        //same override as server.js, so a test run reads the copy the server writes
+        baseDir = path.resolve(process.env.USTOOL_BASE_DIR);
+    } else if (isDev) {
         baseDir = path.resolve(__dirname, '..', '..', 'Stream Tool');
     } else if (process.env.PORTABLE_EXECUTABLE_DIR) {
         baseDir = process.env.PORTABLE_EXECUTABLE_DIR;
@@ -52,12 +55,19 @@ let skinP1Teammate = "";
 let skinP2Teammate = "";
 
 let movedSettings = false;
+let bracketOpen = false;
 let presetPanelOpen = false;
-//which character slot the roster will write to: "1", "2", "1Teammate" or "2Teammate"
+//"game" fills the scoreboard players, "bracket" fills the slots of the bracket round
+let presetPanelMode = "game";
+//which character slot the roster will write to: "1", "2", "1Teammate", "2Teammate",
+//or "bracket" followed by a slot number for the top 8 bracket editor
 let charTarget = "1";
 let playerPresets = [];
-let startGGData = {};
+//every player the loaded tournament import knows, lowercase name -> {seed, country, tag, pronouns}
+let importData = {};
+let importConfigData = null;
 let countryCodes = null;
+let interfaceInfo = null;
 
 
 const viewport = document.getElementById('viewport');
@@ -207,6 +217,7 @@ async function init() {
     //first, add listeners for the bottom bar buttons
     document.getElementById('updateRegion').addEventListener("click", writeScoreboard);
     document.getElementById('settingsRegion').addEventListener("click", moveViewport);
+    document.getElementById('bracketRegion').addEventListener("click", moveToBracket);
     document.getElementById('closeSettings').addEventListener("click", goBack);
 
     createCasterRow(1);
@@ -263,6 +274,10 @@ async function init() {
             hideChars();
         }
     });
+    //bracket slots can be emptied again, the scoreboard players always have someone
+    document.getElementById('charNoneTile').addEventListener("click", () => {
+        bracketEditor.setSlotCharacter(Number(charTarget.slice(7)), "None", "1");
+    });
 
     //check whenever an image isnt found so we replace it with a "?"
     document.getElementById('p1CharImg').addEventListener("error", () => {
@@ -295,16 +310,16 @@ async function init() {
     p1NameInp.addEventListener("input", resizeInput);
     p2NameInp.addEventListener("input", resizeInput);
 
-    //reset score, tag, and pronouns when name changes
+    //reset the score, and pull in what the tournament import knows, when the name changes
     p1NameInp.addEventListener("change", () => {
         p1NScoreInp.value = "0";
         changeInputWidth(p1NScoreInp);
-        applyStartGGToPlayer(p1NameInp.value, p1SeedInp, p1CountryInp, p1TagInp, p1PronInp, p1FlagImg);
+        applyImportToSlot(getPlayerSlot(1));
     });
     p2NameInp.addEventListener("change", () => {
         p2NScoreInp.value = "0";
         changeInputWidth(p2NScoreInp);
-        applyStartGGToPlayer(p2NameInp.value, p2SeedInp, p2CountryInp, p2TagInp, p2PronInp, p2FlagImg);
+        applyImportToSlot(getPlayerSlot(2));
     });
 
     //preset save buttons
@@ -321,13 +336,9 @@ async function init() {
     p1TeammateCountryInp.addEventListener('input', () => updateFlagPreview(p1TeammateCountryInp.value, p1TeammateFlagImg));
     p2TeammateCountryInp.addEventListener('input', () => updateFlagPreview(p2TeammateCountryInp.value, p2TeammateFlagImg));
 
-    //pull start.gg data for the teammate too, same as the main player name box
-    p1TeammateInp.addEventListener("change", () => {
-        applyStartGGToPlayer(p1TeammateInp.value, p1TeammateSeedInp, p1TeammateCountryInp, p1TeammateTagInp, p1TeammatePronInp, p1TeammateFlagImg);
-    });
-    p2TeammateInp.addEventListener("change", () => {
-        applyStartGGToPlayer(p2TeammateInp.value, p2TeammateSeedInp, p2TeammateCountryInp, p2TeammateTagInp, p2TeammatePronInp, p2TeammateFlagImg);
-    });
+    //pull tournament import data for the teammate too, same as the main player name box
+    p1TeammateInp.addEventListener("change", () => applyImportToSlot(getPlayerSlot(1, true)));
+    p2TeammateInp.addEventListener("change", () => applyImportToSlot(getPlayerSlot(2, true)));
 
     //crew battle stock +/- buttons
     document.getElementById('p1StockPlus').addEventListener('click', () => {
@@ -358,7 +369,7 @@ async function init() {
     });
 
     //preset panel
-    document.getElementById('presetsRegion').addEventListener('click', openPresetPanel);
+    document.getElementById('presetsRegion').addEventListener('click', () => openPresetPanel("game"));
     document.getElementById('closePresetPanel').addEventListener('click', closePresetPanel);
     document.getElementById('closePresetPanelBottom').addEventListener('click', closePresetPanel);
     document.getElementById('clearPresetSearch').addEventListener('click', clearPresetSearch);
@@ -383,7 +394,11 @@ async function init() {
     p1NScoreInp.addEventListener("input", resizeInput);
     p2NScoreInp.addEventListener("input", resizeInput);
 
-    fetch(API_BASE + '/api/json/BestOfModes')
+    //live sync has to wait for these, a snapshot taken before a dropdown has its
+    //options reads back as "" and would blank that field on every other GUI
+    const dropdownsLoaded = [];
+
+    dropdownsLoaded.push(fetch(API_BASE + '/api/json/BestOfModes')
         .then(r => r.json())
         .then(data => {
             data.forEach(entry => {
@@ -393,9 +408,9 @@ async function init() {
                 boSelect.appendChild(opt);
             });
             boSelect.value = currentBestOf;
-        });
+        }).catch(() => {}));
 
-    fetch(API_BASE + '/api/json/MatchTypes')
+    dropdownsLoaded.push(fetch(API_BASE + '/api/json/MatchTypes')
         .then(r => r.json())
         .then(data => {
             data.forEach(entry => {
@@ -405,7 +420,7 @@ async function init() {
                 matchTypeSelect.appendChild(opt);
             });
             matchTypeSelect.value = currentMatchType;
-        });
+        }).catch(() => {}));
 
     matchTypeSelect.addEventListener('change', () => {
         if (currentMatchType === "wl") { //leaving wins/losses, drop the placeholder names
@@ -506,7 +521,7 @@ async function init() {
     });
 
     // load predefined round names
-    fetch(API_BASE + '/api/json/RoundNames')
+    dropdownsLoaded.push(fetch(API_BASE + '/api/json/RoundNames')
         .then(r => r.json())
         .then(data => {
             roundNames = data;
@@ -521,7 +536,7 @@ async function init() {
         .catch(() => {
             useCustomRound.checked = true;
             applyRoundMode();
-        });
+        }));
 
 
     //add a listener to the swap button
@@ -556,24 +571,11 @@ async function init() {
         ipcRenderer.send('restore-window-size');
     });
 
-    document.getElementById('startggFetch').addEventListener('click', fetchStartGG);
     document.getElementById('rescanPresetsButt').addEventListener('click', rescanPresets);
     p1CountryInp.addEventListener('input', () => updateFlagPreview(p1CountryInp.value, p1FlagImg));
     p2CountryInp.addEventListener('input', () => updateFlagPreview(p2CountryInp.value, p2FlagImg));
 
-    // check if API key is pre-loaded from app.properties.txt
-    try {
-        const keyStatus = await fetch(API_BASE + '/api/startgg-key').then(r => r.json());
-        const tokenInp = document.getElementById('startggToken');
-        const tokenStatus = document.getElementById('startggTokenStatus');
-        if (keyStatus.fromFile) {
-            tokenInp.value = '';
-            tokenInp.placeholder = '••••••••••••••••';
-            tokenInp.disabled = true;
-            tokenStatus.textContent = '✓ Loaded from app.properties.txt';
-            tokenStatus.style.color = 'var(--selected)';
-        }
-    } catch {}
+    await initImportSettings();
 
     document.getElementById("openRemote").addEventListener("click", () => {
         const url = `http://localhost:${serverPort}`;
@@ -591,6 +593,11 @@ async function init() {
     /* KEYBOARD SHORTCUTS */
 
     Mousetrap.bind('enter', () => {
+        //on the bracket page, enter pushes the bracket rather than the scoreboard
+        if (bracketOpen) {
+            bracketEditor.update();
+            return;
+        }
         writeScoreboard();
         document.getElementById('botBar').style.backgroundColor = "var(--bg3)";
     }, 'keydown');
@@ -601,10 +608,10 @@ async function init() {
     Mousetrap.bind('esc', () => {
         if (presetPanelOpen) { //just close the browser, never touch the player data
             closePresetPanel();
-        } else if (movedSettings) { //if settings are open, close them
-            goBack();
         } else if (document.getElementById('charRoster').style.opacity == 1) {
             hideChars(); //if charRoster is visible, hide it
+        } else if (movedSettings || bracketOpen) { //if settings or the bracket are open, close them
+            goBack();
         } else {
             clearPlayers();
         }
@@ -664,6 +671,12 @@ async function init() {
 
     fitToViewport();
     window.addEventListener("resize", fitToViewport);
+
+    await bracketEditor.init();
+
+    //every GUI mirrors the others' unsent edits from here on
+    await Promise.all(dropdownsLoaded);
+    await liveSync.start();
 
     // const numberedScoreOption = document.querySelector("#forceNS");
     // numberedScoreOption.addEventListener("click", () => {
@@ -781,11 +794,26 @@ function moveViewport() {
     }
 }
 
+//the bracket editor is the leftmost third of the viewport, so it slides in whole
+function moveToBracket() {
+    if (movedSettings) goBack();
+    viewport.style.right = "0%";
+    bracketOpen = true;
+    document.body.classList.add('bracketOpen');
+}
+
 function goBack() {
     viewport.style.right = "100%";
     document.getElementById('overlay').style.opacity = "100%";
     document.getElementById('goBack').style.display = "none";
     movedSettings = false;
+    if (bracketOpen) {
+        bracketOpen = false;
+        document.body.classList.remove('bracketOpen');
+        colorPicker.close();
+        //leaving the page is as good as pressing update
+        bracketEditor.flush();
+    }
 }
 
 
@@ -811,152 +839,254 @@ async function getJson(fileName) {
 }
 
 async function loadSavedData() {
-    let data = await getJson("ScoreboardInfo");
-    if (data) {
-        // Player 1
-        p1NameInp.value = data.p1Name || p1NameInp.value;
-        p1TagInp.value = data.p1Team || p1TagInp.value;
-        p1PronInp.value = data.p1Pron || p1PronInp.value;
-        p1NScoreInp.value = data.p1NScore || p1NScoreInp.value;
+    const data = await getJson("ScoreboardInfo");
+    if (data) await applyGuiState(data);
+}
 
-        charP1 = data.p1Character || "Random";
-        skinP1 = data.p1Skin || `1`;
-        colorP1 = data.p1Color || "Red";
-        currentP1WL = data.p1WL || "";
+//the keys of every value a doubles teammate slot carries
+const TEAMMATE_KEYS = ["Name", "Character", "Skin", "Tag", "Pron", "Seed", "Country"];
 
-        // Player 2
-        p2NameInp.value = data.p2Name || p2NameInp.value;
-        p2TagInp.value = data.p2Team || p2TagInp.value;
-        p2PronInp.value = data.p2Pron || p2PronInp.value;
-        p2NScoreInp.value = data.p2NScore || p2NScoreInp.value;
+//everything the GUI can edit, as one flat object. live sync diffs this between ticks
+//to find what changed, and writeScoreboard() builds the overlay payload from it.
+//reading it must never change anything on screen
+function buildGuiState() {
+    const state = {
+        p1Name: p1NameInp.value,
+        p1Team: p1TagInp.value,
+        p1Pron: p1PronInp.value,
+        p1NScore: p1NScoreInp.value,
+        p1Character: charP1,
+        p1Skin: skinP1,
+        p1Color: colorP1,
+        p1WL: currentP1WL,
+        p1Seed: p1SeedInp.value,
+        p1Country: p1CountryInp.value,
+        p2Name: p2NameInp.value,
+        p2Team: p2TagInp.value,
+        p2Pron: p2PronInp.value,
+        p2NScore: p2NScoreInp.value,
+        p2Character: charP2,
+        p2Skin: skinP2,
+        p2Color: colorP2,
+        p2WL: currentP2WL,
+        p2Seed: p2SeedInp.value,
+        p2Country: p2CountryInp.value,
+        bestOf: currentBestOf,
+        matchType: currentMatchType,
+        //the controls that produce the round, not the finished string: reading the string
+        //backwards can't tell custom text from an unknown preset, and abbreviated names
+        //("Winners Rd 1") never match the preset they came from
+        roundMode: useCustomRound.checked ? "custom" : "preset",
+        roundName: roundSelect.value,
+        roundNumber: roundNumberInp.value,
+        roundCustom: roundInp.value,
+        format: formatInp.value,
+        tournamentName: document.getElementById('tournamentName').value,
+        allowIntro: document.getElementById('allowIntro').checked,
+        teamName1: teamName1Inp.value,
+        teamName2: teamName2Inp.value,
+        crewStocks1: crewStocks1Inp.value,
+        crewStocks2: crewStocks2Inp.value
+    };
 
-        charP2 = data.p2Character || "Random";
-        skinP2 = data.p2Skin || `1`;
-        colorP2 = data.p2Color || "Blue";
-        currentP2WL = data.p2WL || "";
-
-        if (p1SeedInp)    p1SeedInp.value    = data.p1Seed    || "";
-        if (p1CountryInp) { p1CountryInp.value = data.p1Country || ""; updateFlagPreview(data.p1Country || "", p1FlagImg); }
-        if (p2SeedInp)    p2SeedInp.value    = data.p2Seed    || "";
-        if (p2CountryInp) { p2CountryInp.value = data.p2Country || ""; updateFlagPreview(data.p2Country || "", p2FlagImg); }
-
-        // Doubles teammates / crew battle
-        currentMatchType = data.matchType || "singles";
-        p1TeammateInp.value = data.p1TeammateName || "";
-        p2TeammateInp.value = data.p2TeammateName || "";
-        p1TeammateTagInp.value  = data.p1TeammateTag  || "";
-        p2TeammateTagInp.value  = data.p2TeammateTag  || "";
-        p1TeammatePronInp.value = data.p1TeammatePron || "";
-        p2TeammatePronInp.value = data.p2TeammatePron || "";
-        p1TeammateSeedInp.value = data.p1TeammateSeed || "";
-        p2TeammateSeedInp.value = data.p2TeammateSeed || "";
-        p1TeammateCountryInp.value = data.p1TeammateCountry || "";
-        p2TeammateCountryInp.value = data.p2TeammateCountry || "";
-        updateFlagPreview(data.p1TeammateCountry || "", p1TeammateFlagImg);
-        updateFlagPreview(data.p2TeammateCountry || "", p2TeammateFlagImg);
-        charP1Teammate = data.p1TeammateCharacter || "Random";
-        charP2Teammate = data.p2TeammateCharacter || "Random";
-        skinP1Teammate = data.p1TeammateSkin || "1";
-        skinP2Teammate = data.p2TeammateSkin || "1";
-        teamName1Inp.value = data.teamName1 || "";
-        teamName2Inp.value = data.teamName2 || "";
-        crewStocks1Inp.value = data.crewStocks1 ?? "0";
-        crewStocks2Inp.value = data.crewStocks2 ?? "0";
-
-        document.getElementById('p1TeammateCharSelector').setAttribute('src', charPath + '/CSS/' + charP1Teammate + '.png');
-        document.getElementById('p2TeammateCharSelector').setAttribute('src', charPath + '/CSS/' + charP2Teammate + '.png');
-        applyMatchType();
-
-        currentBestOf = data.bestOf || "Bo3";
-        applyBestOf();
-        //which round control is in use is shared state, not a per-device preference — otherwise
-        //a GUI left on the preset dropdown keeps showing the old round after the other one
-        //types custom text, and overwrites it the moment someone hits update
-        if (data.roundMode) {
-            useCustomRound.checked = data.roundMode === "custom";
-            if (data.roundCustom !== undefined) roundInp.value    = data.roundCustom;
-            if (data.roundNumber !== undefined) roundNumberInp.value = data.roundNumber;
-            //a name that isn't in this machine's RoundNames.json would blank the dropdown
-            if (roundNames.some(o => o.name === data.roundName)) roundSelect.value = data.roundName;
-            applyRoundMode();
-        } else if (data.round) {
-            //ScoreboardInfo.json written before the round controls were shared only has the
-            //finished string, so it still has to be matched back to a preset
-            const matched = roundNames.find(o => {
-                if (o.showNumber) return data.round.startsWith(o.name + ' ');
-                return data.round === o.name;
-            });
-            if (!useCustomRound.checked && matched) {
-                roundSelect.value = matched.name;
-                if (matched.showNumber) roundNumberInp.value = data.round.slice(matched.name.length + 1);
-                updateRoundNumberVisibility();
-            } else {
-                roundInp.value = data.round;
-            }
-        }
-        formatInp.value = data.format || formatInp.value;
-
-        document.getElementById('tournamentName').value = data.tournamentName || "";
-        for (let cn = 1; data[`caster${cn}Name`] !== undefined; cn++) {
-            if (cn > casterCount) createCasterRow(cn);
-            document.getElementById(`cName${cn}`).value    = data[`caster${cn}Name`]    || "";
-            document.getElementById(`cTwitter${cn}`).value = data[`caster${cn}Twitter`] || "";
-            document.getElementById(`cTwitch${cn}`).value  = data[`caster${cn}Twitch`]  || "";
-        }
-
-        document.getElementById('allowIntro').checked = data.allowIntro || false;
-
-
-        if (isElectron) {
-            document.getElementById('p1CharSelector').setAttribute('src', charPath + '/CSS/' + charP1 + '.png');
-            document.getElementById('p2CharSelector').setAttribute('src', charPath + '/CSS/' + charP2 + '.png');
-        } else {
-            document.getElementById('p1CharSelector').setAttribute('src', charPath + '/CSS/' + charP1 + '.png');
-            document.getElementById('p2CharSelector').setAttribute('src', charPath + '/CSS/' + charP2 + '.png');
-        }
-
-        charImgChange(charImgP1, charP1, skinP1);
-        charImgChange(charImgP2, charP2, skinP2);
-
-        // Colors
-        let interfaceInfo = await getJson("InterfaceInfo");
-        if (interfaceInfo) {
-            for (let i = 0; i < Object.keys(interfaceInfo.colorSlots).length; i++) {
-                if (interfaceInfo.colorSlots["color" + i].name == colorP1) {
-                    document.getElementById("p1ColorRect").style.backgroundColor = interfaceInfo.colorSlots["color" + i].hex;
-                    document.getElementById("player1").style.backgroundImage = "linear-gradient(to bottom left, " + interfaceInfo.colorSlots["color" + i].hex + "50, #00000000, #00000000)";
-                }
-                if (interfaceInfo.colorSlots["color" + i].name == colorP2) {
-                    document.getElementById("p2ColorRect").style.backgroundColor = interfaceInfo.colorSlots["color" + i].hex;
-                    document.getElementById("player2").style.backgroundImage = "linear-gradient(to bottom left, " + interfaceInfo.colorSlots["color" + i].hex + "50, #00000000, #00000000)";
-                }
-            }
-        }
-
-        if (currentP1WL == "W") p1W.click();
-        else if (currentP1WL == "L") p1L.click();
-
-        if (currentP2WL == "W") p2W.click();
-        else if (currentP2WL == "L") p2L.click();
-
-        applyBestOf();
-
-        const resize = (el) => { if (el) resizeInput.call(el); };
-
-        resize(p1NameInp);
-        resize(p1TagInp);
-        resize(p1PronInp);
-        resize(p1NScoreInp);
-        resize(p2NameInp);
-        resize(p2TagInp);
-        resize(p2PronInp);
-        resize(p2NScoreInp);
-
-        await addSkinIcons(1);
-        await addSkinIcons(2);
-        await addTeammateSkinIcons(1);
-        await addTeammateSkinIcons(2);
+    for (const pNum of [1, 2]) {
+        const slot = getPlayerSlot(pNum, true);
+        state[`p${pNum}TeammateName`]      = slot.nameInp.value;
+        state[`p${pNum}TeammateCharacter`] = slot.character;
+        state[`p${pNum}TeammateSkin`]      = slot.skin;
+        state[`p${pNum}TeammateTag`]       = slot.tagInp.value;
+        state[`p${pNum}TeammatePron`]      = slot.pronInp.value;
+        state[`p${pNum}TeammateSeed`]      = slot.seedInp.value;
+        state[`p${pNum}TeammateCountry`]   = slot.countryInp.value;
     }
+
+    //casters are numbered by their position, the ids of removed rows leave gaps
+    const casterRows = document.querySelectorAll('#casterInfo .caster');
+    state.casterCount = casterRows.length;
+    casterRows.forEach((row, i) => {
+        const n = row.dataset.n;
+        state[`caster${i + 1}Name`]    = document.getElementById(`cName${n}`).value;
+        state[`caster${i + 1}Twitter`] = document.getElementById(`cTwitter${n}`).value;
+        state[`caster${i + 1}Twitch`]  = document.getElementById(`cTwitch${n}`).value;
+    });
+
+    return state;
+}
+
+//only touches an input whose value actually changed, so a field someone is typing
+//into keeps its caret when another GUI's edit to a different field arrives
+function setInputValue(inp, value, resize = false) {
+    const text = value == null ? "" : String(value);
+    if (inp.value !== text) inp.value = text;
+    if (resize) changeInputWidth(inp);
+}
+
+function setPlayerColor(pNum, colorName) {
+    if (pNum == 1) colorP1 = colorName;
+    else colorP2 = colorName;
+    const slots = interfaceInfo?.colorSlots;
+    if (!slots) return;
+    for (const key in slots) {
+        if (slots[key].name != colorName) continue;
+        document.getElementById("p" + pNum + "ColorRect").style.backgroundColor = slots[key].hex;
+        document.getElementById("player" + pNum).style.backgroundImage =
+            "linear-gradient(to bottom left, " + slots[key].hex + "50, #00000000, #00000000)";
+    }
+}
+
+//draws the [W]/[L] buttons for one player, "" leaves both off
+function setPlayerWL(pNum, value) {
+    const w = pNum == 1 ? p1W : p2W;
+    const l = pNum == 1 ? p1L : p2L;
+    if (value == "W") w.click();
+    else if (value == "L") l.click();
+    else {
+        if (pNum == 1) currentP1WL = "";
+        else currentP2WL = "";
+        for (const box of [w, l]) {
+            box.style.color = "var(--text2)";
+            box.style.backgroundImage = "var(--bg4)";
+        }
+    }
+}
+
+/**
+ * Puts a whole GUI state on screen: a ScoreboardInfo.json written by an update, or
+ * another GUI's state arriving through live sync
+ * @param {Object} data - Flat state, as buildGuiState() makes it
+ * @param {Boolean} live - A live sync change: skip the work for whatever didn't change
+ */
+async function applyGuiState(data, live = false) {
+
+    //the mode goes first, since switching it resets fields the values below fill back in
+    const matchType = data.matchType || "singles";
+    const bestOf = data.bestOf || "Bo3";
+    const modeChanged = matchType !== currentMatchType || bestOf !== currentBestOf;
+    currentMatchType = matchType;
+    currentBestOf = bestOf;
+    if (modeChanged || !live) {
+        applyMatchType();
+        applyBestOf();
+    }
+
+    // Players
+    for (const pNum of [1, 2]) {
+        const p = `p${pNum}`;
+        const slot = getPlayerSlot(pNum);
+        setInputValue(slot.nameInp, data[`${p}Name`], true);
+        setInputValue(slot.tagInp, data[`${p}Team`], true);
+        setInputValue(slot.pronInp, data[`${p}Pron`], true);
+        setInputValue(pNum == 1 ? p1NScoreInp : p2NScoreInp, data[`${p}NScore`] ?? "0", true);
+        setInputValue(slot.seedInp, data[`${p}Seed`]);
+        if (slot.countryInp.value !== (data[`${p}Country`] || "") || !live) {
+            setInputValue(slot.countryInp, data[`${p}Country`]);
+            updateFlagPreview(slot.countryInp.value, slot.flagImg);
+        }
+
+        const char = data[`${p}Character`] || "Random";
+        const skin = data[`${p}Skin`] || "1";
+        const charChanged = char !== slot.character;
+        if (!live || charChanged || skin !== slot.skin) {
+            if (pNum == 1) { charP1 = char; skinP1 = skin; }
+            else           { charP2 = char; skinP2 = skin; }
+            document.getElementById(`${p}CharSelector`).setAttribute('src', charPath + '/CSS/' + char + '.png');
+            charImgChange(pNum == 1 ? charImgP1 : charImgP2, char, skin);
+            if (!live || charChanged) await addSkinIcons(pNum);
+        }
+
+        const color = data[`${p}Color`] || (pNum == 1 ? "Red" : "Blue");
+        if (!live || color !== (pNum == 1 ? colorP1 : colorP2)) setPlayerColor(pNum, color);
+    }
+
+    // Doubles teammates / crew battle
+    for (const pNum of [1, 2]) {
+        const p = `p${pNum}Teammate`;
+        const slot = getPlayerSlot(pNum, true);
+        setInputValue(slot.nameInp, data[`${p}Name`], true);
+        setInputValue(slot.tagInp, data[`${p}Tag`], true);
+        setInputValue(slot.pronInp, data[`${p}Pron`], true);
+        setInputValue(slot.seedInp, data[`${p}Seed`]);
+        if (slot.countryInp.value !== (data[`${p}Country`] || "") || !live) {
+            setInputValue(slot.countryInp, data[`${p}Country`]);
+            updateFlagPreview(slot.countryInp.value, slot.flagImg);
+        }
+
+        const char = data[`${p}Character`] || "Random";
+        const skin = data[`${p}Skin`] || "1";
+        const charChanged = char !== slot.character;
+        if (!live || charChanged || skin !== slot.skin) {
+            if (pNum == 1) { charP1Teammate = char; skinP1Teammate = skin; }
+            else           { charP2Teammate = char; skinP2Teammate = skin; }
+            document.getElementById(`p${pNum}TeammateCharSelector`).setAttribute('src', charPath + '/CSS/' + char + '.png');
+            if (!live || charChanged) await addTeammateSkinIcons(pNum);
+        }
+    }
+    setInputValue(teamName1Inp, data.teamName1);
+    setInputValue(teamName2Inp, data.teamName2);
+    setInputValue(crewStocks1Inp, data.crewStocks1 ?? "0");
+    setInputValue(crewStocks2Inp, data.crewStocks2 ?? "0");
+
+    //which round control is in use is shared state, not a per-device preference — otherwise
+    //a GUI left on the preset dropdown keeps showing the old round after the other one
+    //types custom text, and overwrites it the moment someone hits update
+    if (data.roundMode) {
+        useCustomRound.checked = data.roundMode === "custom";
+        if (data.roundCustom !== undefined) setInputValue(roundInp, data.roundCustom);
+        if (data.roundNumber !== undefined) setInputValue(roundNumberInp, data.roundNumber);
+        //a name that isn't in this machine's RoundNames.json would blank the dropdown
+        if (roundNames.some(o => o.name === data.roundName) && roundSelect.value !== data.roundName) {
+            roundSelect.value = data.roundName;
+        }
+        applyRoundMode();
+    } else if (data.round) {
+        //ScoreboardInfo.json written before the round controls were shared only has the
+        //finished string, so it still has to be matched back to a preset
+        const matched = roundNames.find(o => {
+            if (o.showNumber) return data.round.startsWith(o.name + ' ');
+            return data.round === o.name;
+        });
+        if (!useCustomRound.checked && matched) {
+            roundSelect.value = matched.name;
+            if (matched.showNumber) roundNumberInp.value = data.round.slice(matched.name.length + 1);
+            updateRoundNumberVisibility();
+        } else {
+            roundInp.value = data.round;
+        }
+    }
+    setInputValue(formatInp, data.format);
+
+    //after the round, since a round that isn't grand finals clears these
+    setPlayerWL(1, data.p1WL || "");
+    setPlayerWL(2, data.p2WL || "");
+
+    setInputValue(document.getElementById('tournamentName'), data.tournamentName);
+    document.getElementById('allowIntro').checked = !!data.allowIntro;
+
+    // Casters
+    let casterTotal = data.casterCount;
+    if (casterTotal === undefined) {
+        casterTotal = 0;
+        while (data[`caster${casterTotal + 1}Name`] !== undefined) casterTotal++;
+    }
+    let casterRows = [...document.querySelectorAll('#casterInfo .caster')];
+    if (casterRows.length !== casterTotal) {
+        while (casterRows.length < casterTotal) {
+            createCasterRow(casterCount + 1);
+            casterRows = [...document.querySelectorAll('#casterInfo .caster')];
+        }
+        for (const row of casterRows.slice(casterTotal)) {
+            if (activeCasterN === Number(row.dataset.n)) closeSocialModal();
+            row.remove();
+        }
+        casterRows = casterRows.slice(0, casterTotal);
+        fitToViewport();
+    }
+    casterRows.forEach((row, i) => {
+        const n = row.dataset.n;
+        setInputValue(document.getElementById(`cName${n}`), data[`caster${i + 1}Name`]);
+        setInputValue(document.getElementById(`cTwitter${n}`), data[`caster${i + 1}Twitter`]);
+        setInputValue(document.getElementById(`cTwitch${n}`), data[`caster${i + 1}Twitch`]);
+    });
 }
 
 // polling logic
@@ -965,6 +1095,9 @@ let isSaving = false;
 
 const serverPort = new URLSearchParams(window.location.search).get('port') || '1111';
 const API_BASE = isElectron ? `http://localhost:${serverPort}` : '';
+
+//what this GUI last saw of the server's other shared state; null until the first poll
+const knownVersions = { presets: null, import: null, notice: null };
 
 async function pollForUpdates() {
     if (isSaving) return;
@@ -975,11 +1108,34 @@ async function pollForUpdates() {
 
         if (data.timestamp > localTimestamp) {
             console.log("Remote update detected, reloading...");
-            await loadSavedData();
+            //through live sync, so what the file says isn't sent straight back out as an edit
+            await liveSync.whileApplying(loadSavedData);
             localTimestamp = data.timestamp;
 
             showToast('Overlay remotely updated', 1000);
         }
+
+        //someone saved, deleted or imported presets, maybe on another device
+        if (knownVersions.presets !== null && data.presetsVersion !== knownVersions.presets) {
+            await loadPresets();
+            if (presetPanelOpen) renderPresetList(document.getElementById('presetSearchInp').value);
+        }
+        knownVersions.presets = data.presetsVersion;
+
+        //import settings changed, or a tournament was fetched
+        if (knownVersions.import !== null && data.importVersion !== knownVersions.import) {
+            await loadImportConfig();
+            await loadImportPlayers();
+        }
+        knownVersions.import = data.importVersion;
+
+        bracketEditor.onServerVersion(data.bracketVersion);
+
+        //things the server did by itself, like a bracket auto import failing
+        if (knownVersions.notice !== null && data.notice?.id !== knownVersions.notice && data.notice?.text) {
+            showToast(data.notice.text, 3500);
+        }
+        knownVersions.notice = data.notice?.id ?? 0;
     } catch (error) {
         console.error("Polling error:", error);
     }
@@ -1018,6 +1174,7 @@ async function saveData(data) {
 //will load the color list to a color slot combo box
 async function loadColors(pNum) {
     let colorList = await getJson("InterfaceInfo"); //check the color list
+    interfaceInfo = colorList;
 
     //for each color found, add them to the color list
     for (let i = 0; i < Object.keys(colorList.colorSlots).length; i++) {
@@ -1074,7 +1231,7 @@ async function updateColor() {
     }
 
     let clickedColor = this.textContent;
-    let colorList = await getJson("InterfaceInfo");
+    let colorList = interfaceInfo || await getJson("InterfaceInfo");
 
     //search for the color we just clicked
     for (let i = 0; i < Object.keys(colorList.colorSlots).length; i++) {
@@ -1155,15 +1312,32 @@ function openChars() {
         charTarget = "2Teammate";
     }
 
+    showRoster();
+}
+
+//same roster, but for a slot of the bracket round being edited
+function openCharsForBracket(slot) {
+    charTarget = "bracket" + slot;
+    showRoster();
+}
+
+function showRoster() {
+    const roster = document.getElementById('charRoster');
+    const forBracket = charTarget.startsWith("bracket");
+    //the bracket editor is the viewport's first third, the player editor the second
+    roster.classList.toggle('forBracket', forBracket);
+    document.getElementById('charNoneTile').style.display = forBracket ? "" : "none";
+    showSkinStep(false);
+
     // Reset search
     const searchInput = document.getElementById('charSearchInput');
     searchInput.value = "";
     filterChars.call(searchInput);
 
-    document.getElementById('charRoster').style.display = "flex"; //show the thing
+    roster.style.display = "flex"; //show the thing
     setTimeout(() => { //right after, change opacity and scale
-        document.getElementById('charRoster').style.opacity = 1;
-        document.getElementById('charRoster').style.transform = "scale(1)";
+        roster.style.opacity = 1;
+        roster.style.transform = "scale(1)";
         searchInput.focus();
     }, 0);
 }
@@ -1174,6 +1348,38 @@ function hideChars() {
     setTimeout(() => {
         document.getElementById('charRoster').style.display = "none";
     }, 200);
+}
+
+//swaps the roster between the character grid and one character's skins
+function showSkinStep(show) {
+    document.getElementById('searchContainer').style.display = show ? "none" : "";
+    document.getElementById('charGrid').style.display = show ? "none" : "";
+    document.getElementById('charSkinStep').style.display = show ? "flex" : "none";
+}
+
+//bracket slots only show a stock icon, so the skin gets picked right after the character
+async function pickBracketSkin(char) {
+    const slot = Number(charTarget.slice(7));
+    const charInfo = await getJson("Character Info/" + char);
+    const skins = charInfo?.skinList || [];
+    if (skins.length <= 1) {
+        bracketEditor.setSlotCharacter(slot, char, skins[0] || "1");
+        hideChars();
+        return;
+    }
+
+    document.getElementById('charSkinTitle').textContent = char + " — pick a skin";
+    const grid = document.getElementById('charSkinGrid');
+    grid.innerHTML = '';
+    for (const skin of skins) {
+        const img = document.createElement('img');
+        img.className = "charSkinChoice";
+        img.src = charPath + '/Stock Icons/' + char + '/' + skin + '.png';
+        img.title = skin;
+        img.addEventListener("click", () => bracketEditor.setSlotCharacter(slot, char, skin));
+        grid.appendChild(img);
+    }
+    showSkinStep(true);
 }
 
 function filterChars() {
@@ -1189,7 +1395,13 @@ function filterChars() {
 }
 
 //called whenever clicking an image in the character roster
-function changeCharacter() {
+function changeCharacter(event) {
+    if (charTarget.startsWith("bracket")) {
+        //the roster stays up for the skin step, so the click can't reach its hide listener
+        event.stopPropagation();
+        pickBracketSkin(this.id);
+        return;
+    }
     if (charTarget == "1") {
         charP1 = this.id;
         skinP1 = `1`;
@@ -1666,8 +1878,17 @@ async function deletePreset(name) {
     renderPresetList(document.getElementById('presetSearchInp').value);
 }
 
-function openPresetPanel() {
+/**
+ * Opens the preset browser
+ * @param {String} mode - "game" fills the scoreboard players, "bracket" the bracket round
+ */
+function openPresetPanel(mode = "game") {
+    presetPanelMode = mode === "bracket" ? "bracket" : "game";
     const panel = document.getElementById('presetPanel');
+    //the bracket editor is the viewport's first third, the player editor the second
+    panel.classList.toggle('forBracket', presetPanelMode === "bracket");
+    document.getElementById('presetPanelRound').textContent =
+        presetPanelMode === "bracket" ? bracketEditor.getRoundName() : "";
     panel.style.display = 'flex';
     requestAnimationFrame(() => {
         panel.style.opacity = '1';
@@ -1742,6 +1963,16 @@ function renderPresetList(query) {
         delBtn.addEventListener('click', () => deletePreset(preset.name));
 
         row.appendChild(info);
+        if (presetPanelMode === "bracket") {
+            //one button per slot of the round being edited, top to bottom
+            for (let i = 0; i < bracketEditor.getSlotCount(); i++) {
+                row.appendChild(loadBtn(String(i + 1), `Place in slot ${i + 1} of this round`,
+                    () => bracketEditor.applyPreset(i, preset)));
+            }
+            row.appendChild(delBtn);
+            container.appendChild(row);
+            return;
+        }
         //doubles teams are P1+P3 vs P2+P4, so keep each team's buttons together
         row.appendChild(loadBtn('P1', 'Load into Player 1', () => applyPreset(1, preset)));
         if (currentMatchType === "doubles") {
@@ -1935,77 +2166,134 @@ function updateFlagPreview(countryName, flagImg) {
     }
 }
 
-function applyStartGGToPlayer(name, seedInp, countryInp, tagInp, pronInp, flagImg) {
-    const d = startGGData[name.toLowerCase()];
+//fills a player's seed, country, tag and pronouns from the loaded tournament. only
+//what the site actually knows is written, so it never blanks what a preset filled in
+function applyImportToSlot(slot) {
+    const d = importData[slot.nameInp.value.trim().toLowerCase()];
     if (!d) return;
-    if (d.seed)     seedInp.value    = d.seed;
-    if (d.country)  { countryInp.value = d.country; updateFlagPreview(d.country, flagImg); }
-    if (d.tag)      tagInp.value     = d.tag;
-    if (d.pronouns) pronInp.value    = d.pronouns;
+    if (d.seed !== "" && d.seed != null) slot.seedInp.value = d.seed;
+    if (d.country)  { slot.countryInp.value = d.country; updateFlagPreview(d.country, slot.flagImg); }
+    if (d.tag)      { slot.tagInp.value = d.tag; changeInputWidth(slot.tagInp); }
+    if (d.pronouns) { slot.pronInp.value = d.pronouns; changeInputWidth(slot.pronInp); }
 }
 
-async function fetchStartGG() {
-    const slug = document.getElementById('startggSlug').value.trim();
-    const token = document.getElementById('startggToken').value.trim();
-    const statusEl = document.getElementById('startggStatus');
-    const fetchBtn = document.getElementById('startggFetch');
-    if (!slug) return;
+//start.gg, parry.gg and Challonge all run through the server, which keeps the keys.
+//a GUI only ever learns whether a key is set, and where from
+const importSourceSelect = document.getElementById('importSourceSelect');
+const importTokenInp = document.getElementById('importToken');
+const importSlugInp = document.getElementById('importSlug');
+const importEventInp = document.getElementById('importEvent');
+const rememberImportSlug = document.getElementById('rememberImportSlug');
+
+async function initImportSettings() {
+    importSourceSelect.addEventListener('change', () => postImportConfig({ source: importSourceSelect.value }));
+    importTokenInp.addEventListener('change', async () => {
+        const token = importTokenInp.value.trim();
+        if (!token) return;
+        await postImportConfig({ source: importSourceSelect.value, token });
+        //the server has it now, so it doesn't sit in the box
+        importTokenInp.value = '';
+    });
+    importSlugInp.addEventListener('change', () =>
+        postImportConfig({ source: importSourceSelect.value, slug: importSlugInp.value }));
+    importEventInp.addEventListener('change', () =>
+        postImportConfig({ source: importSourceSelect.value, event: importEventInp.value }));
+    rememberImportSlug.addEventListener('change', () =>
+        postImportConfig({ rememberSlug: rememberImportSlug.checked }));
+    document.getElementById('importFetch').addEventListener('click', fetchImport);
+
+    await loadImportConfig();
+    await loadImportPlayers();
+}
+
+async function loadImportConfig() {
+    try {
+        renderImportConfig(await fetch(API_BASE + '/api/import/config').then(r => r.json()));
+    } catch {}
+}
+
+async function postImportConfig(body) {
+    try {
+        const res = await fetch(API_BASE + '/api/import/config', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(body)
+        });
+        renderImportConfig(await res.json());
+    } catch {}
+}
+
+async function loadImportPlayers() {
+    try {
+        importData = await fetch(API_BASE + '/api/import/players').then(r => r.json());
+    } catch {}
+}
+
+function renderImportConfig(cfg) {
+    importConfigData = cfg;
+    const s = cfg.sources[cfg.source];
+    importSourceSelect.value = cfg.source;
+
+    document.getElementById('importTokenLabel').textContent = s.tokenLabel;
+    const tokenStatus = document.getElementById('importTokenStatus');
+    if (s.keyFromFile) {
+        importTokenInp.value = '';
+        importTokenInp.placeholder = '••••••••••••••••';
+        importTokenInp.disabled = true;
+        tokenStatus.textContent = '✓ Loaded from app.properties.txt';
+        tokenStatus.style.color = 'var(--selected)';
+    } else {
+        importTokenInp.disabled = false;
+        importTokenInp.placeholder = s.hasKey ? '•••••••• (paste to replace)' : `Enter your ${s.name} key`;
+        tokenStatus.textContent = s.hasKey
+            ? '✓ Key set until the app closes'
+            : 'Kept until the app closes — put it in app.properties.txt to keep it';
+        tokenStatus.style.color = s.hasKey ? 'var(--selected)' : 'var(--text2)';
+    }
+
+    document.getElementById('importSlugHint').textContent = s.slugHint;
+    importSlugInp.placeholder = s.slugPlaceholder;
+    //someone typing here right now wins over what the server last heard
+    if (document.activeElement !== importSlugInp) importSlugInp.value = s.slug;
+    document.getElementById('importEventBox').style.display = s.needsEvent ? '' : 'none';
+    if (document.activeElement !== importEventInp) importEventInp.value = s.event;
+    const note = document.getElementById('importNote');
+    note.textContent = s.note;
+    note.style.display = s.note ? '' : 'none';
+    rememberImportSlug.checked = cfg.rememberSlug;
+
+    bracketEditor.setImportName(s.name);
+}
+
+async function fetchImport() {
+    const statusEl = document.getElementById('importStatus');
+    const fetchBtn = document.getElementById('importFetch');
+    //a slug typed without leaving the box hasn't been sent yet
+    await postImportConfig({ source: importSourceSelect.value, slug: importSlugInp.value, event: importEventInp.value });
+    if (!importSlugInp.value.trim()) {
+        statusEl.textContent = 'Enter a slug or URL first';
+        return;
+    }
     statusEl.textContent = 'Fetching…';
     fetchBtn.disabled = true;
-    startGGData = {};
     try {
-        let page = 1, totalPages = 1;
-        do {
-            const res = await fetch(API_BASE + '/api/startgg', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ slug, page, perPage: 200, token: token || undefined })
-            });
-            const json = await res.json();
-            const entrants = json.data?.event?.entrants;
-            if (!entrants) throw new Error(json.errors?.[0]?.message || 'Bad response — check slug');
-            totalPages = entrants.pageInfo.totalPages;
-            for (const node of entrants.nodes) {
-                //an entrant can be a solo player or a doubles team — every participant on the
-                //entrant (both teammates) shares the same entrant seed
-                for (const p of node.participants ?? []) {
-                    startGGData[p.gamerTag.toLowerCase()] = {
-                        name:     p.gamerTag,
-                        seed:     node.initialSeedNum ?? "",
-                        country:  p.user?.location?.country ?? "",
-                        tag:      p.prefix ?? "",
-                        pronouns: p.user?.genderPronoun ?? ""
-                    };
-                }
-            }
-            page++;
-        } while (page <= totalPages);
+        const res = await fetch(API_BASE + '/api/import/fetch', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ source: importSourceSelect.value })
+        });
+        const result = await res.json();
+        if (!res.ok) throw new Error(result.error || `HTTP ${res.status}`);
 
-        // upsert all fetched players into the preset list
-        statusEl.textContent = 'Saving presets…';
-        const existingPresets = await fetch(API_BASE + '/api/presets').then(r => r.json()).catch(() => []);
-        let newCount = 0, updatedCount = 0;
-        for (const d of Object.values(startGGData)) {
-            const existing = existingPresets.find(p => p.name.toLowerCase() === d.name.toLowerCase());
-            const preset = existing
-                ? { ...existing, tag: d.tag || existing.tag, pronouns: d.pronouns || existing.pronouns, seed: d.seed, country: d.country }
-                : { name: d.name, tag: d.tag || '', pronouns: d.pronouns || '', character: 'Random', skin: '1', seed: d.seed, country: d.country };
-            await fetch(API_BASE + '/api/presets', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(preset)
-            });
-            if (existing) updatedCount++; else newCount++;
-        }
+        await loadImportPlayers();
         await loadPresets();
         renderPresetList(document.getElementById('presetSearchInp').value);
+        statusEl.textContent = `${result.count} players — ${result.created} new, ${result.updated} updated`;
 
-        const total = Object.keys(startGGData).length;
-        statusEl.textContent = `${total} players — ${newCount} new, ${updatedCount} updated`;
-        applyStartGGToPlayer(p1NameInp.value, p1SeedInp, p1CountryInp, p1TagInp, p1PronInp, p1FlagImg);
-        applyStartGGToPlayer(p2NameInp.value, p2SeedInp, p2CountryInp, p2TagInp, p2PronInp, p2FlagImg);
-        applyStartGGToPlayer(p1TeammateInp.value, p1TeammateSeedInp, p1TeammateCountryInp, p1TeammateTagInp, p1TeammatePronInp, p1TeammateFlagImg);
-        applyStartGGToPlayer(p2TeammateInp.value, p2TeammateSeedInp, p2TeammateCountryInp, p2TeammateTagInp, p2TeammatePronInp, p2TeammateFlagImg);
+        for (const pNum of [1, 2]) {
+            applyImportToSlot(getPlayerSlot(pNum));
+            applyImportToSlot(getPlayerSlot(pNum, true));
+        }
     } catch (e) {
         statusEl.textContent = 'Error: ' + e.message;
     } finally {
@@ -2042,80 +2330,26 @@ function copyMatch() {
 //time to write it down
 async function writeScoreboard() {
 
-    let scoreboardJson = {
-        p1Name: p1NameInp.value,
-        p1Team: p1TagInp.value,
-        p1Pron: p1PronInp.value,
-        p1NScore: p1NScoreInp.value,
-        p1Character: charP1,
-        p1Skin: skinP1,
-        p1Color: colorP1,
-        p1WL: currentP1WL,
-        p1Seed: p1SeedInp.value,
-        p1Country: p1CountryInp.value,
-        p2Name: p2NameInp.value,
-        p2Team: p2TagInp.value,
-        p2Pron: p2PronInp.value,
-        p2NScore: p2NScoreInp.value,
-        p2Character: charP2,
-        p2Skin: skinP2,
-        p2Color: colorP2,
-        p2WL: currentP2WL,
-        p2Seed: p2SeedInp.value,
-        p2Country: p2CountryInp.value,
-        bestOf: currentBestOf,
-        matchType: currentMatchType,
-        round: getRoundValue(),
-        //`round` above is the finished string for the overlays. these are the controls that
-        //produced it, so the other GUI can land on the same ones instead of guessing: reading
-        //the string backwards can't tell custom text from an unknown preset, and abbreviated
-        //names ("Winners Rd 1") never match the preset they came from
-        roundMode: useCustomRound.checked ? "custom" : "preset",
-        roundName: roundSelect.value,
-        roundNumber: roundNumberInp.value,
-        roundCustom: roundInp.value,
-        format: formatInp.value,
-        tournamentName: document.getElementById('tournamentName').value,
-        ...(() => {
-            const c = {};
-            document.querySelectorAll('#casterInfo .caster').forEach((row, i) => {
-                const n = row.dataset.n;
-                const idx = i + 1;
-                c[`caster${idx}Name`]    = document.getElementById(`cName${n}`).value;
-                c[`caster${idx}Twitter`] = document.getElementById(`cTwitter${n}`).value;
-                c[`caster${idx}Twitch`]  = document.getElementById(`cTwitch${n}`).value;
-            });
-            return c;
-        })(),
-        allowIntro: document.getElementById('allowIntro').checked,
-        writeSimpleTexts: document.getElementById('writeSimpleTexts').checked,
-    };
+    const scoreboardJson = buildGuiState();
+    //the finished round string is what the overlays read
+    scoreboardJson.round = getRoundValue();
+    scoreboardJson.writeSimpleTexts = document.getElementById('writeSimpleTexts').checked;
+    delete scoreboardJson.casterCount;
 
     //only send what the current match type actually uses, so singles
     //never leaves stale teammate/crew data behind on the overlays
-    if (currentMatchType === "doubles") {
-        scoreboardJson.p1TeammateName      = p1TeammateInp.value;
-        scoreboardJson.p1TeammateCharacter = charP1Teammate;
-        scoreboardJson.p1TeammateSkin      = skinP1Teammate;
-        scoreboardJson.p1TeammateTag       = p1TeammateTagInp.value;
-        scoreboardJson.p1TeammatePron      = p1TeammatePronInp.value;
-        scoreboardJson.p1TeammateSeed      = p1TeammateSeedInp.value;
-        scoreboardJson.p1TeammateCountry   = p1TeammateCountryInp.value;
-        scoreboardJson.p2TeammateName      = p2TeammateInp.value;
-        scoreboardJson.p2TeammateCharacter = charP2Teammate;
-        scoreboardJson.p2TeammateSkin      = skinP2Teammate;
-        scoreboardJson.p2TeammateTag       = p2TeammateTagInp.value;
-        scoreboardJson.p2TeammatePron      = p2TeammatePronInp.value;
-        scoreboardJson.p2TeammateSeed      = p2TeammateSeedInp.value;
-        scoreboardJson.p2TeammateCountry   = p2TeammateCountryInp.value;
+    if (currentMatchType !== "doubles") {
+        for (const pNum of [1, 2]) {
+            for (const key of TEAMMATE_KEYS) delete scoreboardJson[`p${pNum}Teammate${key}`];
+        }
     }
-    if (currentMatchType === "doubles" || currentMatchType === "crew") {
-        scoreboardJson.teamName1 = teamName1Inp.value;
-        scoreboardJson.teamName2 = teamName2Inp.value;
+    if (currentMatchType !== "doubles" && currentMatchType !== "crew") {
+        delete scoreboardJson.teamName1;
+        delete scoreboardJson.teamName2;
     }
-    if (currentMatchType === "crew") {
-        scoreboardJson.crewStocks1 = crewStocks1Inp.value;
-        scoreboardJson.crewStocks2 = crewStocks2Inp.value;
+    if (currentMatchType !== "crew") {
+        delete scoreboardJson.crewStocks1;
+        delete scoreboardJson.crewStocks2;
     }
 
     await saveData(scoreboardJson);

@@ -1,3 +1,7 @@
 /Interface Source Code/dist
 CLAUDE.md
 Ultimate Stream Tool.zip
+# holds API keys, copy app.properties.example.txt to make your own
+Stream Tool/Resources/app.properties.txt
+# per-install settings the app writes (import source, remembered slugs, bracket colors)
+Stream Tool/Resources/Texts/ToolSettings.json

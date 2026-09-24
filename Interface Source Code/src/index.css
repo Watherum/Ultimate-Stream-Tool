@@ -422,21 +422,51 @@ body.matchWL.fillHeight .pEditor {
   border-radius: 2px;
 }
 
-#startggSection {
+#importSection {
   flex-direction: column;
   align-items: flex-start;
   gap: 4px;
   padding: 6px 10px;
 }
 
-#startggSection:hover {
+#importSection:hover {
   background-color: var(--bg2);
 }
 
-#startggSlug {
-  width: calc(100% - 4px);
+.importLabel {
+  font-size: 11px;
+  color: var(--text2);
+  margin-bottom: 3px;
+}
+
+.importHint {
+  font-size: 11px;
+  color: var(--text2);
+}
+
+#importSourceSelect,
+.importField {
+  width: calc(100% - 10px);
   margin-bottom: 4px;
   border-radius: 3px;
+}
+
+#importSourceSelect {
+  margin-bottom: 8px;
+}
+
+.importField:disabled {
+  opacity: 0.6;
+}
+
+#importNote {
+  margin-bottom: 6px;
+}
+
+.importCheckRow {
+  display: flex;
+  align-items: center;
+  margin-bottom: 6px;
 }
 
 #miscSection {
@@ -450,7 +480,7 @@ body.matchWL.fillHeight .pEditor {
   background-color: var(--bg2);
 }
 
-#startggFetch,
+#importFetch,
 #rescanPresetsButt {
   background-color: var(--bg4);
   height: 26px;
@@ -467,12 +497,12 @@ body.matchWL.fillHeight .pEditor {
   flex-shrink: 0;
 }
 
-#startggFetch:hover,
+#importFetch:hover,
 #rescanPresetsButt:hover {
   border-color: var(--selected);
 }
 
-#startggFetch:disabled,
+#importFetch:disabled,
 #rescanPresetsButt:disabled {
   opacity: 0.5;
   cursor: default;
@@ -1294,10 +1324,476 @@ body.matchWL.fillHeight .pEditor {
 }
 
 
-/* bracket section */
+#bracketRegion {
+  width: 32px;
+  flex-shrink: 0;
+  background-color: var(--bg3);
+}
+
+#bracketIcon {
+  width: 20px;
+  height: 20px;
+}
+
+#bracketIcon path {
+  fill: none;
+  stroke: var(--text2);
+  stroke-width: 2.5;
+  stroke-linejoin: round;
+}
+
+#bracketRegion:hover {
+  background-color: var(--bg1);
+}
+
+#bracketRegion:active {
+  background-color: var(--bg5);
+}
+
+
+/* bracket section — the viewport's first third, slid in by the bracket button */
 #bracket {
   width: calc(100% / 3);
-  height: 200px;
+  /* percent, not vh, for the same body zoom reason as #settings */
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  background-color: var(--bg5);
+  overflow-y: auto;
+  box-sizing: border-box;
+  padding-bottom: 8px;
+}
+
+#bracketTitle {
+  width: 100%;
+  height: 32px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: "Smash";
+  border-bottom: 1px solid var(--bg4);
+  position: relative;
+}
+
+#bracketGoBack {
+  position: absolute;
+  right: 10px;
+  width: 24px;
+  height: 24px;
+  cursor: pointer;
+  color: var(--text1);
+}
+
+#bracketGoBack:hover {
+  color: var(--selected);
+}
+
+#bracketTopRow,
+#bracketBotRow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+#bracketRoundSelect,
+#bracketAutoSelect {
+  height: 28px;
+  font-size: 13px;
+}
+
+.bracketButt {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 28px;
+  padding: 0 10px;
+  box-sizing: border-box;
+  background-color: var(--bg4);
+  border: 1px solid var(--focused);
+  border-radius: 3px;
+  color: var(--text1);
+  font-family: 'Roboto-Regular';
+  font-size: 13px;
+  white-space: nowrap;
+  cursor: pointer;
+  outline: none;
+  transition: border-color 100ms;
+}
+
+.bracketButt:hover {
+  border-color: var(--selected);
+}
+
+.bracketButt:active {
+  background-color: var(--bg2);
+}
+
+.bracketButt:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+#bracketUpdate {
+  font-family: 'Smash';
+}
+
+/* the color panel and the round's players, side by side */
+#bracketMid {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 18px;
+  flex: 1;
+}
+
+#bracketSide {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+#bracketEncounters {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+}
+
+.bEncounterGroup {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.bEncounterPair {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.bEncounter {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+/* the stock icon doubles as the character button */
+.bCharBtn {
+  width: 30px;
+  height: 30px;
+  flex-shrink: 0;
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--bg4);
+  border-radius: 3px;
+  background-color: var(--bg4);
+  cursor: pointer;
+  transition: border-color 100ms;
+}
+
+.bCharBtn:hover {
+  border-color: var(--selected);
+}
+
+.bCharBtn img {
+  width: 26px;
+  height: 26px;
+  object-fit: contain;
+}
+
+.bCharBtn.empty {
+  border-style: dashed;
+  border-color: var(--focused);
+  background-color: transparent;
+}
+
+.bCharBtn.empty img {
+  display: none;
+}
+
+.bCharBtn.empty::after {
+  content: "+";
+  color: var(--text2);
+  font-size: 16px;
+}
+
+.bInput {
+  width: 130px;
+}
+
+.bTagInp,
+.bScoreInp {
+  width: 56px;
+}
+
+.bScoreInp {
+  text-align: center;
+}
+
+/* copies the scoreboard's two players into this pair */
+.bCopyGameButt {
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text1);
+  background-color: var(--bg2);
+  border: 1px solid var(--focused);
+  border-radius: 100%;
+  cursor: pointer;
+  outline: none;
+  transition: border-color 100ms;
+}
+
+.bCopyGameButt:hover {
+  border-color: var(--selected);
+}
+
+#bracketColors {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 5px;
+}
+
+.bColorBox {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  padding: 3px 6px;
+  border-radius: 5px;
+  background-color: var(--bg2);
+}
+
+.bColorText {
+  font-size: 12px;
+  text-transform: uppercase;
+  color: var(--text2);
+}
+
+/* fixed width so every box lines its controls up with the ones above */
+.bColorBox .bColorText {
+  width: 52px;
+}
+
+/* the current color, click it for the wheel */
+.bColorInput {
+  width: 34px;
+  height: 22px;
+  box-sizing: border-box;
+  border: 1px solid var(--focused);
+  border-radius: 4px;
+  cursor: pointer;
+  transition: border-color 100ms;
+}
+
+.bColorInput:hover {
+  border-color: var(--selected);
+}
+
+.bHexInput {
+  width: 72px;
+  height: 22px;
+  padding: 2px 4px;
+  font-size: 12px;
+  text-align: center;
+  text-transform: uppercase;
+}
+
+/* the eyedropper next to each color box */
+.bColorPick {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 22px;
+  box-sizing: border-box;
+  color: var(--text2);
+  border: 1px solid var(--focused);
+  border-radius: 4px;
+  cursor: pointer;
+  transition: border-color 100ms;
+}
+
+.bColorPick:hover {
+  border-color: var(--selected);
+}
+
+.bColorPick svg {
+  width: 14px;
+  height: 14px;
+}
+
+/* while the screens are being grabbed */
+.bColorPickBusy {
+  opacity: .4;
+  cursor: progress;
+}
+
+#bracketColorReset {
+  height: 22px;
+  padding: 0 8px;
+  font-size: 12px;
+}
+
+#bracketPresets {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+#bracketPresetsHead {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+#bracketPresetsHead .bColorText {
+  flex: 1;
+}
+
+/* six to a row across the panel, so even a full set of twelve takes two short rows */
+#bracketPresetList {
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  gap: 6px;
+}
+
+#bracketPresetEmpty {
+  grid-column: 1 / -1;
+  font-size: 12px;
+  color: var(--text2);
+}
+
+.bPresetWrap {
+  position: relative;
+  display: flex;
+}
+
+/* the three colors of a preset, stacked as stripes on its button */
+.bPreset {
+  width: 100%;
+  height: 20px;
+  padding: 0;
+  border: 1px solid var(--focused);
+  border-radius: 4px;
+  cursor: pointer;
+  transition: border-color 100ms;
+}
+
+.bPreset:hover {
+  border-color: var(--selected);
+}
+
+.bPresetDel {
+  position: absolute;
+  top: -6px;
+  right: -6px;
+  width: 14px;
+  height: 14px;
+  display: none;
+  justify-content: center;
+  align-items: center;
+  font-size: 11px;
+  line-height: 11px;
+  color: var(--text1);
+  background-color: var(--bg2);
+  border: 1px solid var(--focused);
+  border-radius: 100%;
+  cursor: pointer;
+}
+
+.bPresetWrap:hover .bPresetDel {
+  display: flex;
+}
+
+.bPresetDel:hover {
+  border-color: lightcoral;
+  color: lightcoral;
+}
+
+#bracketPresetSave {
+  width: 24px;
+  height: 22px;
+  padding: 0;
+  font-size: 16px;
+  line-height: 16px;
+  color: var(--text1);
+  background-color: var(--bg2);
+  border: 1px solid var(--focused);
+  border-radius: 4px;
+  cursor: pointer;
+  transition: border-color 100ms;
+}
+
+#bracketPresetSave:hover {
+  border-color: var(--selected);
+}
+
+/* our own color wheel, so no second window-only eyedropper tags along */
+#colorPickerPop {
+  position: fixed;
+  z-index: 1100;
+  display: none;
+  flex-direction: column;
+  gap: 8px;
+  padding: 8px;
+  background-color: var(--bg2);
+  border: 1px solid var(--focused);
+  border-radius: 6px;
+  box-shadow: 0px 3px 10px rgba(0, 0, 0, .5);
+  user-select: none;
+  touch-action: none;
+}
+
+/* saturation left to right, brightness top to bottom */
+.cpSquare {
+  position: relative;
+  width: 160px;
+  height: 110px;
+  border-radius: 4px;
+  background-image: linear-gradient(to top, #000000, rgba(0, 0, 0, 0)),
+                    linear-gradient(to right, #ffffff, rgba(255, 255, 255, 0));
+  cursor: crosshair;
+}
+
+.cpHue {
+  position: relative;
+  width: 160px;
+  height: 14px;
+  border-radius: 4px;
+  background-image: linear-gradient(to right, #ff0000, #ffff00, #00ff00,
+                    #00ffff, #0000ff, #ff00ff, #ff0000);
+  cursor: ew-resize;
+}
+
+.cpDot, .cpHueDot {
+  position: absolute;
+  box-sizing: border-box;
+  border: 2px solid #ffffff;
+  border-radius: 100%;
+  box-shadow: 0px 0px 2px rgba(0, 0, 0, .8);
+  pointer-events: none;
+}
+
+.cpDot {
+  width: 12px;
+  height: 12px;
+  transform: translate(-50%, -50%);
+}
+
+.cpHueDot {
+  top: -2px;
+  width: 18px;
+  height: 18px;
+  transform: translateX(-50%);
 }
 
 
@@ -1428,6 +1924,75 @@ body.matchWL.fillHeight .pEditor {
   filter: brightness(1.3);
   transform: scale(1.2);
   transition: transform 200ms;
+}
+
+/* opened from the bracket editor, which is the viewport's first third */
+#charRoster.forBracket,
+#presetPanel.forBracket {
+  left: 0;
+}
+
+/* sized like a roster icon (80x46), so it sits in the grid like one */
+#charNoneTile {
+  width: 7.4%;
+  aspect-ratio: 80 / 46;
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px dashed var(--focused);
+  border-radius: 3px;
+  color: var(--text2);
+  font-size: 14px;
+  cursor: pointer;
+}
+
+#charNoneTile:hover {
+  border-color: var(--selected);
+  color: var(--text1);
+}
+
+#charSkinStep {
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding-top: 12px;
+}
+
+#charSkinTitle {
+  font-family: 'Roboto-Medium';
+  font-size: 14px;
+}
+
+#charSkinGrid {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 6px;
+  max-width: 420px;
+}
+
+.charSkinChoice {
+  width: 44px;
+  height: 44px;
+  padding: 3px;
+  box-sizing: border-box;
+  border: 1px solid var(--bg4);
+  border-radius: 4px;
+  background-color: var(--bg4);
+  cursor: pointer;
+  transition: border-color 100ms;
+}
+
+.charSkinChoice:hover {
+  border-color: var(--selected);
+}
+
+#presetPanelRound {
+  flex-shrink: 0;
+  font-size: 12px;
+  color: var(--selected);
+  white-space: nowrap;
 }
 
 #remoteUpdatePopup {
@@ -1871,11 +2436,21 @@ body.matchWL.fillHeight .pEditor {
     font-size: 16px;
   }
 
-  #startggSection {
+  #importSection {
     padding: 10px;
   }
 
-  #startggFetch {
+  /* the section's rows are tall on mobile, the section itself has to grow with them */
+  #importSection.settingBox {
+    height: auto;
+  }
+
+  #importSourceSelect,
+  .importField {
+    width: 100% !important;
+  }
+
+  #importFetch {
     height: 40px;
     font-size: 14px;
     padding: 0 16px;
@@ -1883,5 +2458,129 @@ body.matchWL.fillHeight .pEditor {
 
   #closeSettings {
     display: block;
+  }
+
+  /* Bracket editor — everything stacks, the players first since they change most */
+  #bracketRegion {
+    width: 50px;
+  }
+  #bracketIcon {
+    width: 30px;
+    height: 30px;
+  }
+  #bracketTitle {
+    height: 50px;
+  }
+  #bracketGoBack {
+    width: 32px;
+    height: 32px;
+  }
+  #bracket {
+    gap: 12px;
+    padding: 0 10px 16px;
+  }
+  #bracketTopRow,
+  #bracketBotRow {
+    width: 100%;
+    flex-wrap: wrap;
+  }
+  #bracketRoundSelect,
+  #bracketAutoSelect {
+    flex: 1;
+    height: 40px;
+    font-size: 16px;
+  }
+  .bracketButt {
+    height: 40px;
+    font-size: 15px;
+    padding: 0 14px;
+  }
+  #bracketAutoSelect {
+    flex: 1 1 100%;
+  }
+  #bracketImport,
+  #bracketUpdate {
+    flex: 1 1 45%;
+  }
+  /* the page is at least a screen tall on mobile, so growing into it would just
+     push the players away from the round picker */
+  #bracketMid {
+    flex: none;
+    flex-direction: column-reverse;
+    align-items: stretch;
+    width: 100%;
+  }
+  #bracketEncounters {
+    align-items: stretch;
+  }
+  .bEncounterGroup {
+    padding-bottom: 8px;
+    border-bottom: 1px solid var(--bg4);
+  }
+  .bEncounterPair {
+    flex: 1;
+  }
+  .bCharBtn {
+    width: 40px;
+    height: 40px;
+  }
+  .bCharBtn img {
+    width: 34px;
+    height: 34px;
+  }
+  /* .textInput goes full width on mobile, these share a row */
+  .bInput.textInput {
+    margin-bottom: 0;
+  }
+  .bNameInp.textInput {
+    flex: 1;
+    width: auto !important;
+    min-width: 0;
+  }
+  .bTagInp.textInput,
+  .bScoreInp.textInput {
+    width: 60px !important;
+    flex-shrink: 0;
+  }
+  .bCopyGameButt {
+    width: 40px;
+    height: 40px;
+  }
+  #bracketSide {
+    align-items: stretch;
+  }
+  .bHexInput.textInput {
+    flex: 1;
+    width: auto !important;
+    height: 34px;
+    font-size: 16px;
+  }
+  .bColorInput {
+    width: 44px;
+    height: 34px;
+  }
+  .bColorPick {
+    width: 34px;
+    height: 34px;
+  }
+  .bPreset {
+    height: 30px;
+  }
+  #bracketPresetSave,
+  #bracketColorReset {
+    height: 34px;
+    min-width: 34px;
+  }
+  /* no hover on touch, so deleting a color preset is always on offer */
+  .bPresetDel {
+    display: flex;
+  }
+
+  #charNoneTile {
+    width: 23%;
+  }
+  .charSkinChoice {
+    width: 56px;
+    height: 56px;
   }
 }

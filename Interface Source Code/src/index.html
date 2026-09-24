@@ -3,12 +3,15 @@
   <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Ultimate Stream Tool V7.1.0</title>
+    <title>Ultimate Stream Tool V8.0.0</title>
     <link rel="stylesheet" href="index.css">
     <script>if (typeof module === 'object') {window.module = module; module = undefined;}</script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
     <script>if (window.module) module = window.module;</script>
     <script src="gui.js" defer></script>
+    <script src="colorPicker.js" defer></script>
+    <script src="bracket.js" defer></script>
+    <script src="liveSync.js" defer></script>
     <script src="mousetrap.min.js" defer></script>
   </head>
 
@@ -17,7 +20,83 @@
     <div id="viewport"> <!-- so we can move the viewport easily -->
 
       <div id="bracket">
+        <div id="bracketTitle">
+          <div id="bracketGoBack" title="Back to the scoreboard [Esc]">
+            <svg viewBox="0 0 24 24">
+              <path fill="currentColor" d="M4,11V13H16L10.5,18.5L11.92,19.92L19.84,12L11.92,4.08L10.5,5.5L16,11H4Z" />
+            </svg>
+          </div>
+          TOP 8 BRACKET
+        </div>
 
+        <div id="bracketTopRow">
+          <select id="bracketRoundSelect" class="textInput mousetrap" title="Which round of the top 8 to edit">
+            <option value="WinnersSemis">Winners Semis</option>
+            <option value="WinnersFinals">Winners Finals</option>
+            <option value="GrandFinals">Grand Finals</option>
+            <option value="TrueFinals">True Finals</option>
+            <option value="LosersTop8">Losers Top 8</option>
+            <option value="LosersQuarters">Losers Quarters</option>
+            <option value="LosersSemis">Losers Semis</option>
+            <option value="LosersFinals">Losers Finals</option>
+          </select>
+          <div id="bracketPresetsButt" class="bracketButt" title="Browse player presets to fill this round">Presets</div>
+        </div>
+
+        <!-- colors on the left, the round's players on the right -->
+        <div id="bracketMid">
+          <div id="bracketSide">
+            <div id="bracketColors">
+              <div class="bColorBox" title="Color of the round titles on the bracket overlay">
+                <span class="bColorText">Round</span>
+                <div class="bColorInput" data-type="round" title="Open the color wheel"></div>
+                <input type="text" class="bHexInput textInput mousetrap" data-type="round" spellcheck="false" maxlength="7" placeholder="#000000" title="Type a hex color code">
+                <div class="bColorPick" data-type="round" title="Pick a color from anywhere on your screen">
+                  <svg viewBox="0 0 16 16"><path fill="currentColor" d="M11.5 1a3.5 3.5 0 0 0-2.475 5.975l-.94.94-.44-.44a.75.75 0 1 0-1.06 1.06l.19.19-4.19 4.19A2 2 0 0 0 2 14.33V15h.67a2 2 0 0 0 1.414-.586l4.19-4.19.19.19a.75.75 0 1 0 1.06-1.06l-.44-.44.94-.94A3.5 3.5 0 0 0 11.5 1zm0 1.5a2 2 0 1 1 0 4 2 2 0 0 1 0-4z"/></svg>
+                </div>
+              </div>
+              <div class="bColorBox" title="Color of the player tags and names on the bracket overlay">
+                <span class="bColorText">Players</span>
+                <div class="bColorInput" data-type="text" title="Open the color wheel"></div>
+                <input type="text" class="bHexInput textInput mousetrap" data-type="text" spellcheck="false" maxlength="7" placeholder="#000000" title="Type a hex color code">
+                <div class="bColorPick" data-type="text" title="Pick a color from anywhere on your screen">
+                  <svg viewBox="0 0 16 16"><path fill="currentColor" d="M11.5 1a3.5 3.5 0 0 0-2.475 5.975l-.94.94-.44-.44a.75.75 0 1 0-1.06 1.06l.19.19-4.19 4.19A2 2 0 0 0 2 14.33V15h.67a2 2 0 0 0 1.414-.586l4.19-4.19.19.19a.75.75 0 1 0 1.06-1.06l-.44-.44.94-.94A3.5 3.5 0 0 0 11.5 1zm0 1.5a2 2 0 1 1 0 4 2 2 0 0 1 0-4z"/></svg>
+                </div>
+              </div>
+              <div class="bColorBox" title="Color of the scores on the bracket overlay">
+                <span class="bColorText">Score</span>
+                <div class="bColorInput" data-type="score" title="Open the color wheel"></div>
+                <input type="text" class="bHexInput textInput mousetrap" data-type="score" spellcheck="false" maxlength="7" placeholder="#000000" title="Type a hex color code">
+                <div class="bColorPick" data-type="score" title="Pick a color from anywhere on your screen">
+                  <svg viewBox="0 0 16 16"><path fill="currentColor" d="M11.5 1a3.5 3.5 0 0 0-2.475 5.975l-.94.94-.44-.44a.75.75 0 1 0-1.06 1.06l.19.19-4.19 4.19A2 2 0 0 0 2 14.33V15h.67a2 2 0 0 0 1.414-.586l4.19-4.19.19.19a.75.75 0 1 0 1.06-1.06l-.44-.44.94-.94A3.5 3.5 0 0 0 11.5 1zm0 1.5a2 2 0 1 1 0 4 2 2 0 0 1 0-4z"/></svg>
+                </div>
+              </div>
+            </div>
+            <div id="bracketPresets">
+              <div id="bracketPresetsHead">
+                <span class="bColorText">Color Presets</span>
+                <button id="bracketPresetSave" title="Save the current colors as a new color preset">+</button>
+                <button id="bracketColorReset" class="bracketButt" title="Restore the default bracket colors">Reset</button>
+              </div>
+              <div id="bracketPresetList"></div>
+            </div>
+          </div>
+          <div id="bracketEncounters"></div>
+        </div>
+
+        <div id="bracketBotRow">
+          <select id="bracketAutoSelect" class="textInput mousetrap" title="Re-import the bracket from the selected site on its own, every so often">
+            <option value="0">Auto import: off</option>
+            <option value="30">Auto import: 30s</option>
+            <option value="60">Auto import: 1m</option>
+            <option value="120">Auto import: 2m</option>
+            <option value="300">Auto import: 5m</option>
+          </select>
+          <button id="bracketImport" class="bracketButt" title="Fill the bracket from the site picked under Tournament Import in Settings. Characters stay put while the same player is in a slot.">
+            <span id="bracketImportText">Import from start.gg</span>
+          </button>
+          <button id="bracketUpdate" class="bracketButt" title="Push the bracket to the overlay now. Edits also go out on their own a moment after you stop typing. [Shortcut: Enter]">UPDATE BRACKET</button>
+        </div>
       </div>
 
       <div id="overlay">
@@ -275,6 +354,11 @@
         </div>
         
         <div id="botBar">
+          <div id="bracketRegion" class="botRegion" title="Top 8 bracket editor">
+            <svg id="bracketIcon" viewBox="0 0 32 32">
+              <path d="M16,4 v8 h8 v8 h4 v8 M16,4 v8 H8 v8 H4 v8 M8,20 h4 v8 M24,20 h-4 v8"/>
+            </svg>
+          </div>
           <div id="updateRegion" class="botRegion" title="Save current info to the json file. [Shortcut: Enter]">
             <div class="rectangle"></div>
             <span class="botText">UPDATE</span>
@@ -370,18 +454,32 @@ They will always appear when typing 'Grand' on the round box.">
           <button id="restoreWindowSize" tabindex="-1" title="Reset window to 890×340">
             Restore default dimensions
           </button>
-          <div class="settingBox" id="startggSection">
+          <div class="settingBox" id="importSection">
             <div style="width:100%">
-              <div class="settingsText" style="font-weight:bold; padding-bottom:6px;">Start.GG Import</div>
-              <div style="font-size:11px; color:var(--text2); margin-bottom:3px;">API Key</div>
-              <input type="password" id="startggToken" class="textInput mousetrap" placeholder="Enter your start.gg token" spellcheck="false" style="width:calc(100% - 10px); margin-bottom:3px;">
-              <div id="startggTokenStatus" style="font-size:11px; color:var(--text2); margin-bottom:8px;"></div>
-              <div style="font-size:11px; color:var(--text2); margin-bottom:2px;">Event slug format: <span style="font-family:monospace;">tournament/slug/event/singles</span></div>
-              <div style="font-size:11px; color:var(--text2); margin-bottom:6px;">Example: <span style="font-family:monospace; color:var(--text1);">tournament/genesis-10/event/ultimate-singles</span></div>
-              <input type="text" id="startggSlug" class="textInput mousetrap" placeholder="tournament/your-event/event/singles" spellcheck="false" style="width:calc(100% - 10px); margin-bottom:4px;">
+              <div class="settingsText" style="font-weight:bold; padding-bottom:6px;">Tournament Import</div>
+              <div class="importLabel">Import from</div>
+              <select id="importSourceSelect" class="textInput mousetrap" title="Which bracket site to pull players and the top 8 bracket from. Each site keeps its own key and slug.">
+                <option value="startgg">start.gg</option>
+                <option value="parrygg">parry.gg</option>
+                <option value="challonge">Challonge</option>
+              </select>
+              <div class="importLabel" id="importTokenLabel">API Key</div>
+              <input type="password" id="importToken" class="textInput mousetrap importField" placeholder="Enter your API key" spellcheck="false" autocomplete="off">
+              <div id="importTokenStatus" class="importHint" style="margin-bottom:8px;"></div>
+              <div class="importLabel" id="importSlugHint">Paste the event URL, or tournament/slug/event/slug</div>
+              <input type="text" id="importSlug" class="textInput mousetrap importField" placeholder="tournament/genesis-x/event/ultimate-singles" spellcheck="false">
+              <div id="importEventBox" style="display:none;" title="Which event of the tournament to read, as a number (0 is the first) or the event's own slug. Leave empty to use the event named in a pasted bracket URL, or the Smash Ultimate event">
+                <div class="importLabel">Event (optional)</div>
+                <input type="text" id="importEvent" class="textInput mousetrap importField" placeholder="Leave empty to autodetect" spellcheck="false">
+              </div>
+              <div id="importNote" class="importHint" style="display:none;"></div>
+              <div class="importCheckRow" title="Keeps each site's slug for the next time the app opens. Keys are never saved here — use app.properties.txt for that.">
+                <input type="checkbox" id="rememberImportSlug" class="settingsCheck" tabindex="-1">
+                <label for="rememberImportSlug" class="settingsText">Remember slug between sessions</label>
+              </div>
               <div style="display:flex; gap:6px; align-items:center;">
-                <button id="startggFetch" tabindex="-1">Fetch Data</button>
-                <span id="startggStatus" style="font-size:11px; color:var(--text2);"></span>
+                <button id="importFetch" tabindex="-1" title="Fetch every entrant's seed, sponsor tag, country and pronouns into your player presets">Fetch Data</button>
+                <span id="importStatus" class="importHint"></span>
               </div>
             </div>
           </div>
@@ -410,7 +508,15 @@ They will always appear when typing 'Grand' on the round box.">
         <div id="searchContainer">
           <input type="text" id="charSearchInput" placeholder="Search..." autocomplete="off">
         </div>
-        <div id="charGrid"></div>
+        <div id="charGrid">
+          <!-- only shown for bracket slots, which can be left without a character -->
+          <div id="charNoneTile" title="No character" style="display:none;">✕</div>
+        </div>
+        <!-- bracket slots pick a skin right after the character -->
+        <div id="charSkinStep" style="display:none;">
+          <div id="charSkinTitle"></div>
+          <div id="charSkinGrid"></div>
+        </div>
       </div>
 
       <div id="presetPanel">
@@ -422,6 +528,7 @@ They will always appear when typing 'Grand' on the round box.">
           </div>
           <input type="text" id="presetSearchInp" placeholder="Search presets..." autocomplete="off">
           <button id="clearPresetSearch" title="Clear search">✕</button>
+          <span id="presetPanelRound"></span>
         </div>
         <div id="presetListContainer"></div>
         <button id="closePresetPanelBottom" title="Close the preset browser [Shortcut: Esc]">CLOSE</button>

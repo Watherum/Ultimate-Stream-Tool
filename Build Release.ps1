@@ -16,7 +16,8 @@ $zip = [System.IO.Compression.ZipFile]::Open($outZip, 'Create')
 
 $files = Get-ChildItem $sourceDir -Recurse -File | Where-Object {
     $_.Name -ne "app.properties.txt" -and
-    $_.Name -ne "PlayerPresets.json"
+    $_.Name -ne "PlayerPresets.json" -and
+    $_.Name -ne "ToolSettings.json"
 }
 
 foreach ($file in $files) {

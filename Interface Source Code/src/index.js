@@ -1,4 +1,4 @@
-const { app, globalShortcut, BrowserWindow, ipcMain } = require('electron');
+const { app, globalShortcut, BrowserWindow, ipcMain, desktopCapturer, screen } = require('electron');
 const path = require('path');
 
 // start the web server
@@ -56,6 +56,158 @@ ipcMain.on('restore-window-size', () => {
   mainWindowRef.setSize(BASE_WIDTH + adj, BASE_HEIGHT + adj + currentExtraHeight);
 });
 
+// the screen color picker for the bracket editor, the one that can grab colors from
+// outside this app. chromium's own eyedropper only ever sees this window's contents,
+// so we lay a see through window over every monitor and read that monitor's live feed
+let eyedropperWins = [];             // one overlay window per monitor
+const eyedropperFeeds = new Map();   // webContents id -> what its monitor is
+let eyedropperResolve = null;
+
+// enumerating the screens takes a moment, so it's done ahead of time and only
+// redone when the monitors themselves change
+let screenSources = [];
+
+function refreshScreenSources() {
+  // no thumbnails. generating those was the whole of the wait, and the
+  // overlays stream their monitor live rather than looking at a still
+  return desktopCapturer.getSources({
+    types: ['screen'],
+    thumbnailSize: { width: 0, height: 0 }
+  }).then(sources => {
+    screenSources = sources;
+    return sources;
+  }).catch(e => {
+    console.log("Could not list the screens:", e);
+    return screenSources;
+  });
+}
+
+// pairs every monitor up with its capture source
+async function listScreenSources(refresh) {
+  const displays = screen.getAllDisplays();
+  let sources = refresh || !screenSources.length ? await refreshScreenSources() : screenSources;
+
+  const find = (display) => {
+    // display_id is a string on some platforms and missing on others
+    let source = sources.find(s => String(s.display_id) == String(display.id));
+    if (!source && sources.length == 1) source = sources[0];
+    return source;
+  };
+
+  // a monitor we have no source for means the list went stale on us
+  if (!refresh && displays.some(display => !find(display))) {
+    sources = await refreshScreenSources();
+  }
+
+  const feeds = [];
+  for (const display of displays) {
+    const source = find(display);
+    if (!source) continue;
+    feeds.push({
+      display,
+      sourceId: source.id,
+      width: Math.round(display.size.width * display.scaleFactor),
+      height: Math.round(display.size.height * display.scaleFactor)
+    });
+  }
+  return feeds;
+}
+
+// closes every overlay and hands the picked color back to the GUI
+function closeEyedropper(hex) {
+  const wins = eyedropperWins;
+  eyedropperWins = [];
+  eyedropperFeeds.clear();
+  for (const win of wins) {
+    if (!win.isDestroyed()) win.destroy();
+  }
+  if (eyedropperResolve) {
+    eyedropperResolve(hex || null);
+    eyedropperResolve = null;
+  }
+}
+
+ipcMain.handle('pick-screen-color', async () => {
+  if (eyedropperWins.length) return null; // already picking
+
+  let feeds;
+  try {
+    feeds = await listScreenSources();
+  } catch (e) {
+    console.log("Could not find the screens:", e);
+    return null;
+  }
+  if (!feeds.length) return null;
+
+  for (const feed of feeds) {
+    const bounds = feed.display.bounds;
+    const overlay = new BrowserWindow({
+      x: bounds.x,
+      y: bounds.y,
+      width: bounds.width,
+      height: bounds.height,
+      frame: false,
+      // see through, so the user picks off the live screen itself
+      transparent: true,
+      backgroundColor: "#00000000",
+      resizable: false,
+      movable: false,
+      minimizable: false,
+      maximizable: false,
+      skipTaskbar: true,
+      alwaysOnTop: true,
+      enableLargerThanScreen: true,
+      hasShadow: false,
+      webPreferences: {
+        nodeIntegration: true,
+        contextIsolation: false,
+        backgroundThrottling: false
+      }
+    });
+
+    overlay.setAlwaysOnTop(true, 'screen-saver');
+    overlay.removeMenu();
+    // keep our own loupe out of the feed we read colors from
+    overlay.setContentProtection(true);
+
+    eyedropperFeeds.set(overlay.webContents.id, {
+      displayId: feed.display.id,
+      sourceId: feed.sourceId,
+      width: feed.width,
+      height: feed.height
+    });
+    overlay.loadFile(path.join(__dirname, 'eyedropper.html'));
+
+    // if it gets closed some other way, don't leave the GUI waiting
+    overlay.on('closed', () => {
+      if (eyedropperWins.includes(overlay)) closeEyedropper(null);
+    });
+
+    eyedropperWins.push(overlay);
+  }
+
+  // the first one gets the keyboard, so Esc works right away
+  eyedropperWins[0].focus();
+
+  return new Promise(resolve => { eyedropperResolve = resolve; });
+});
+
+// each overlay asking which monitor it's sitting on. if the id we had went
+// stale, the overlay asks again and we go get a fresh one
+ipcMain.handle('eyedropper-source', async (event, refresh) => {
+  const feed = eyedropperFeeds.get(event.sender.id);
+  if (!feed) return null;
+  if (refresh) {
+    const fresh = (await listScreenSources(true)).find(f => f.display.id == feed.displayId);
+    if (!fresh) return null;
+    feed.sourceId = fresh.sourceId;
+  }
+  return feed;
+});
+
+ipcMain.on('eyedropper-pick', (event, hex) => closeEyedropper(hex));
+ipcMain.on('eyedropper-cancel', () => closeEyedropper(null));
+
 const createWindow = (port) => {
   const isLinux = process.platform === 'linux';
   const adjustment = isLinux ? 50 : 0;
@@ -92,6 +244,10 @@ app.commandLine.appendSwitch('ozone-platform-hint', 'auto');
 // Some APIs can only be used after this event occurs.
 app.on('ready', () => {
   serverReady.then(port => createWindow(port));
+  // have the screen list ready for the first time the eyedropper is used
+  refreshScreenSources();
+  screen.on('display-added', () => refreshScreenSources());
+  screen.on('display-removed', () => refreshScreenSources());
   globalShortcut.register('CommandOrControl+Shift+I', () => {
     const win = BrowserWindow.getFocusedWindow();
     if (win) win.webContents.toggleDevTools();

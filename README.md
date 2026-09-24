@@ -1,4 +1,4 @@
-# Ultimate Stream Tool — V7.1.0
+# Ultimate Stream Tool — V8.0.0
 
 A desktop application for managing Smash Ultimate tournament livestream overlays. Built on Electron with a local HTTP server, it lets a streamer control OBS browser source overlays from a GUI or remotely from any device on the same network.
 
@@ -74,15 +74,66 @@ Turning *Use custom round* back off returns the dropdown to **Winners Round 1** 
 - Both appear on the Watherum and Capital Region scoreboard overlays
 - Both are saved and restored with player presets
 
-### start.gg Import
-- Enter a start.gg **API token** and **event slug** to bulk-import all entrants from a bracket
-- Upserts tag, pronouns, seed, and country into local player presets — preserves existing character/skin data
-- Pronouns come from each entrant's start.gg profile, and only overwrite what you already have if start.gg actually has a value
-- Reports how many players were found and how many were new vs. updated
-- Imported players are available for autocomplete in the name fields
+### Tournament Import — start.gg, parry.gg & Challonge
+Pick your bracket site from the **Import from** dropdown under *Tournament Import* in Settings, then fetch every entrant in one click. Each site keeps its own key, slug and event, so switching between them doesn't make you retype anything.
+
+**Shared across all three:**
+- Paste a full bracket URL or type the bare slug — either works
+- Player **seeds** and **sponsor tags** go into your player presets. New players get a preset (character Random); existing ones are updated — every preset with that name, whatever its character — and a field is only overwritten when the site actually has a value for it
+- Typing (or loading) a player name fills in their seed, tag, country and pronouns from the loaded tournament — on the main players and the doubles teammates alike
+- The **Top 8 import** on the bracket page fills the bracket straight from the site's results (see *Top 8 Bracket* below)
+- **Seed reset on startup** — seeds are cleared from every preset when the app launches, so a previous tournament's seeds never carry over
+- Optional **Remember slug between sessions**
+- The imports run on the app's own server, so the remote GUI can fetch too without ever seeing a key
+
+**API keys** go in `Stream Tool/Resources/app.properties.txt` (copy `app.properties.example.txt`). A key in that file is used automatically and the key box is locked. A key typed into the GUI instead is only kept until the app closes — it is never written to disk.
+
+```
+startgg.apiKey = ...
+parrygg.apiKey = ...
+challonge.apiKey = ...          (a legacy v1 key), or:
+challonge.clientId = ...
+challonge.clientSecret = ...
+```
+
+**start.gg** — the most complete source:
+- Also fills **country** and **pronouns** (pronouns only when the player set them on their profile)
+- Missing flag images are downloaded into `Resources/Flags/` on fetch, so they work offline in OBS
+- **Doubles** — every teammate of a team entrant gets the team's seed
+- Addresses an *event*, so the slug reads `tournament/<tournament>/event/<event>` — e.g. `tournament/genesis-x/event/ultimate-singles`
+
+**parry.gg:**
+- Also fills **country** and **pronouns** from each player's profile
+- Addresses a whole tournament, so an extra **Event** box picks which event to read — an index (0 is the first) or the event's slug. Leave it blank and the event named in a pasted URL is used, or failing that, the tournament's Smash Ultimate event
+- Round names come straight from the site, so top 8 imports land in the right slots
+
+**Challonge:**
+- Seeds and sponsor tags only — Challonge has no user accounts, so it has no countries or pronouns to give. Sponsor tags are read from entry names written as `TAG | Player`
+- Takes a legacy v1 API key, or an OAuth application pasted as `clientId:clientSecret`
+- Challonge has no round names, just numbered rounds, so Winners/Losers Finals, Grand Finals and the reset are worked out from the shape of the bracket
+- Community brackets work in both `org.challonge.com/slug` and `challonge.com/org/slug` forms
+
+### Top 8 Bracket
+The **bracket button** at the bottom left of the bar opens the top 8 bracket editor, which drives the new `Bracket.html` overlay.
+
+- Pick a round from the dropdown and fill in each slot's **tag, name, score and character** — the character button opens the roster, then a skin picker for that character (the ✕ tile clears it)
+- Edits go out to the overlay on their own **0.7 s after you stop typing**; **UPDATE BRACKET** (or `Enter`) pushes them immediately
+- The **←** button beside each pair copies Player 1 and Player 2 from the scoreboard — names, tags, scores and characters
+- **Presets** opens the preset browser with one button per slot of the round being edited
+- **Import from …** fills every round from the site selected under *Tournament Import*. A slot keeps its character as long as the same player is still in it
+- **Auto import** re-imports every 30 s / 1 m / 2 m / 5 m. If it starts failing you get one notice, and another when it recovers
+- **Colors** — the overlay's round titles, player names and scores each have a color: click the swatch for a color wheel, type a hex code, or use the **eyedropper** to pick a color from anywhere on any of your monitors. Save up to 12 **color presets** with **+**; hover one to delete it
+- True Finals only appears on the overlay once someone is placed in it
+- The bracket is shared between every GUI: an edit on the remote GUI, an edit in the app and an auto import all merge slot by slot rather than overwriting each other
+- The rounds reset when the app starts, like the scoreboard; the colors, color presets and auto import interval are kept
+
+### Live Sync
+Every open GUI — the app window and any remote GUI on another device — mirrors the others **as you type**. Names, scores, characters, match type, round, casters: whatever one person changes shows up on everyone else's screen within a fraction of a second, **without** touching the overlays. The overlays still only change when someone presses **UPDATE**.
+
+Only the fields that changed are sent, so two people editing different things at the same time don't overwrite each other. A remote GUI opened mid-session picks up the current state — including edits nobody has pushed to the overlays yet.
 
 ### Misc Settings
-- **Rescan Presets** — re-reads `PlayerPresets.json` from disk and redraws the preset browser, for when the file was hand-edited or a preset was saved from a remote GUI on another device
+- **Rescan Presets** — re-reads `PlayerPresets.json` from disk and redraws the preset browser, for when the file was hand-edited. (Presets saved, deleted or imported from any GUI show up on every other GUI by themselves.)
 
 ### Caster Info
 - Starts with two caster slots; use the **＋🎤** button to add more (up to 10 are written out), and the **−** on a row to remove it
@@ -95,6 +146,7 @@ Turning *Use custom round* back off returns the dropdown to **Winners Round 1** 
 - **Caster Screen.html** — commentator info display
 - **Watherum Scoreboard.html** — alternate scoreboard layout with flags and seeds
 - **Capital Region Scoreboard.html** — Capital Region branded scoreboard with flags and seeds
+- **Bracket.html** — the top 8 bracket, filled from the bracket editor (reads `Resources/Texts/Bracket.json`)
 
 **Match type support:** Game Scoreboard and VS Screen follow the Match Type — doubles stacks both stock icons and shows `Player & Teammate` (or the team name), crew shows the crew name plus the active player with stocks in place of the score. Caster Screen needs no changes since it doesn't show player info. The Watherum and Capital Region scoreboards are unchanged and still show only the first player of each side in doubles and crew. Teammate tag, pronouns, seed and country are written to the JSON and Simple Texts but aren't drawn on the built-in overlays.
 
@@ -109,8 +161,8 @@ All overlays poll for data changes every 500 ms and update automatically — no 
 ### Keyboard Shortcuts
 | Shortcut | Action |
 |---|---|
-| `Enter` | Update scoreboard |
-| `ESC` | Closes the preset browser, character roster or Settings if one is open — otherwise clears player info |
+| `Enter` | Update scoreboard — or, on the bracket page, push the bracket |
+| `ESC` | Closes the preset browser, character roster, Settings or the bracket page if one is open — otherwise clears player info |
 | `Ctrl+Shift+I` | Open/close developer tools |
 | `Ctrl+F5` | Hard-reload the interface |
 
@@ -140,7 +192,8 @@ All overlays poll for data changes every 500 ms and update automatically — no 
 | Always on top | Keeps the app window above other windows |
 | Resizable window | Allows the app window to be freely resized |
 | Restore default dimensions | Resets the window to the default size for the current match type |
-| start.gg API Token | Token for the start.gg import feature |
+| Tournament Import | Bracket site, API key, slug (and event, for parry.gg) for the player and top 8 imports |
+| Remember slug between sessions | Keeps each site's slug for the next launch |
 
 All settings are persisted across sessions.
 
@@ -180,7 +233,7 @@ These instructions are for OBS Studio:
 5. **Tick** `Refresh browser when scene becomes active`.
 6. Launch `Ultimate Stream Tool.exe` and start updating.
 
-Repeat from step 2 to add `VS Screen.html`, `Caster Screen.html`, or either of the alternate scoreboards — recommended on a separate scene.
+Repeat from step 2 to add `VS Screen.html`, `Caster Screen.html`, `Bracket.html`, or either of the alternate scoreboards — recommended on a separate scene.
 
 Two OBS transitions are included in `Resources/OBS Transitions/`:
 - Add a new stinger transition, set the video to `Game In.webm` or `Swoosh.webm`, and set the transition point to `350 ms`.

@@ -1,0 +1,179 @@
+{
+  "colors": {
+    "round": "#48bf91",
+    "text": "#ffffff",
+    "score": "#000000"
+  },
+  "rounds": {
+    "WinnersSemis": [
+      {
+        "name": "-",
+        "tag": "",
+        "character": "None",
+        "skin": "1",
+        "score": "-"
+      },
+      {
+        "name": "-",
+        "tag": "",
+        "character": "None",
+        "skin": "1",
+        "score": "-"
+      },
+      {
+        "name": "-",
+        "tag": "",
+        "character": "None",
+        "skin": "1",
+        "score": "-"
+      },
+      {
+        "name": "-",
+        "tag": "",
+        "character": "None",
+        "skin": "1",
+        "score": "-"
+      }
+    ],
+    "WinnersFinals": [
+      {
+        "name": "-",
+        "tag": "",
+        "character": "None",
+        "skin": "1",
+        "score": "-"
+      },
+      {
+        "name": "-",
+        "tag": "",
+        "character": "None",
+        "skin": "1",
+        "score": "-"
+      }
+    ],
+    "GrandFinals": [
+      {
+        "name": "-",
+        "tag": "",
+        "character": "None",
+        "skin": "1",
+        "score": "-"
+      },
+      {
+        "name": "-",
+        "tag": "",
+        "character": "None",
+        "skin": "1",
+        "score": "-"
+      }
+    ],
+    "TrueFinals": [
+      {
+        "name": "-",
+        "tag": "",
+        "character": "None",
+        "skin": "1",
+        "score": "-"
+      },
+      {
+        "name": "-",
+        "tag": "",
+        "character": "None",
+        "skin": "1",
+        "score": "-"
+      }
+    ],
+    "LosersTop8": [
+      {
+        "name": "-",
+        "tag": "",
+        "character": "None",
+        "skin": "1",
+        "score": "-"
+      },
+      {
+        "name": "-",
+        "tag": "",
+        "character": "None",
+        "skin": "1",
+        "score": "-"
+      },
+      {
+        "name": "-",
+        "tag": "",
+        "character": "None",
+        "skin": "1",
+        "score": "-"
+      },
+      {
+        "name": "-",
+        "tag": "",
+        "character": "None",
+        "skin": "1",
+        "score": "-"
+      }
+    ],
+    "LosersQuarters": [
+      {
+        "name": "-",
+        "tag": "",
+        "character": "None",
+        "skin": "1",
+        "score": "-"
+      },
+      {
+        "name": "-",
+        "tag": "",
+        "character": "None",
+        "skin": "1",
+        "score": "-"
+      },
+      {
+        "name": "-",
+        "tag": "",
+        "character": "None",
+        "skin": "1",
+        "score": "-"
+      },
+      {
+        "name": "-",
+        "tag": "",
+        "character": "None",
+        "skin": "1",
+        "score": "-"
+      }
+    ],
+    "LosersSemis": [
+      {
+        "name": "-",
+        "tag": "",
+        "character": "None",
+        "skin": "1",
+        "score": "-"
+      },
+      {
+        "name": "-",
+        "tag": "",
+        "character": "None",
+        "skin": "1",
+        "score": "-"
+      }
+    ],
+    "LosersFinals": [
+      {
+        "name": "-",
+        "tag": "",
+        "character": "None",
+        "skin": "1",
+        "score": "-"
+      },
+      {
+        "name": "-",
+        "tag": "",
+        "character": "None",
+        "skin": "1",
+        "score": "-"
+      }
+    ]
+  }
+}
